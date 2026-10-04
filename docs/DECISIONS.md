@@ -189,3 +189,12 @@ Template:
 - **Alternatives considered:** Parenting the held object to the camera; a physics joint (spring); new input actions or a separate input asset.
 - **Why rejected:** Parenting teleports the object through walls; a joint is springier and harder to tune for a beginner; new input setup duplicates what exists.
 - **Consequences / tradeoffs:** Feel depends on several tunable values (hold distance, follow strength, max hold speed, throw impulse). A held object can still jitter when pressed hard against geometry; the speed cap and auto-drop limit this. No crosshair yet, so the sphere cast's thickness makes aiming forgiving.
+
+## D-019 — Impact strength = incoming momentum (P1.4 prototype)
+- **Status:** Locked (prototype-scoped)
+- **Date:** 2026-10-04
+- **Decision:** Physical impacts are measured as **impact strength = incoming object's mass (kg) × impact speed (m/s)** — its momentum — using the physics engine's `Collision.relativeVelocity` at contact. Only moving physics objects count; impacts below a small threshold are ignored. In P1.4 an `ImpactMeter` component logs the strength and adds a horizontal knockback impulse proportional to it (capped), because a 60 kg target barely moves from light hits through collision response alone. There is no health, damage, or combat state.
+- **Reason:** Matches DESIGN's "throw damage scales with mass × speed", is simple to explain and tune, and is testable as a pure function. Measuring at contact is more reliable than reading the other object's velocity after the collision is resolved.
+- **Alternatives considered:** Kinetic energy (½·m·v²); the solver's `Collision.impulse`; physics-only knockback with no added shove.
+- **Why rejected:** Energy makes speed dominate (a fast light crate would outweigh a slow heavy one far more than it feels); `impulse` depends on the target's own mass and solver details, so it's harder to reason about; physics-only knockback was too subtle on a character-sized mass to evaluate.
+- **Consequences / tradeoffs:** `relativeVelocity` includes sliding motion, so glancing hits can read slightly stronger than head-on ones. The knockback scale is a feel value, not physics. When real damage arrives (Phase 2), it should build on this measure rather than a new one.
