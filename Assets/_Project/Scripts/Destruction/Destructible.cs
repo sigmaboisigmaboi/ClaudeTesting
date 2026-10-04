@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using TheDeep.Player;
 using TheDeep.State;
 using TheDeep.World;
@@ -59,7 +58,6 @@ namespace TheDeep.Destruction
         public GameObject IntactVisual => intact;
         public GameObject FracturedPieces => fractured;
         public GameObject RubbleVisual => rubble;
-        public IReadOnlyList<Destructible> Supports => supports;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetForNewPlaySession()

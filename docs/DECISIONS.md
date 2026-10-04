@@ -173,7 +173,7 @@ Template:
 - **Consequences / tradeoffs:** Push feel depends on `pushStrength`, object mass, and friction, and may need tuning. Physics objects do not push the player back. Resolves the open point noted in D-015.
 
 ## D-017 — P3.1 persistence spike: facts in WorldState, saved as JSON
-- **Status:** Locked (spike-scoped — the temporary parts are expected to be replaced in P3 proper)
+- **Status:** Locked (spike-scoped). The "pad loads its own copy" shortcut is **superseded by D-020** (shared `WorldSession`); immediate saving remains until P3 proper.
 - **Date:** 2026-10-04
 - **Decision:** Persistence is pulled forward as **P3.1 — Persistence Spike**, before P1's remaining physics items and P2. A plain C# `WorldState` class holds a list of fact names and owns its own JSON save/load (`ToJson`/`FromJson`, `LoadFromDisk`/`SaveToDisk`/`DeleteSaveFile`) using Unity's built-in `JsonUtility`, writing `world_state.json` to `Application.persistentDataPath`. Facts are **one-way events** (once recorded, they stay recorded). A gameplay component (`CrateTargetPad`) only detects its event and calls `WorldState.Record`. On load, an **authored "after" state** is applied (the crate is placed on the pad) — physics positions are not saved.
 - **Reason:** Tests the core identity — "I changed something, and the world remembers" — as early as possible, using the already-proven push mechanic. Keeping JSON handling inside `WorldState` keeps gameplay scripts focused and the persistence logic testable (EditMode tests).
