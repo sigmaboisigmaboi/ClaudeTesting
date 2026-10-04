@@ -288,3 +288,23 @@ Template:
 - **Alternatives considered:** Guards dealing damage; guards only shoving the player; ignoring impacts on NPCs.
 - **Why rejected:** Damage needs a health system (Phase 2 combat); a shove on a CharacterController needs new player code and is easy to escape without consequence; ignoring impacts makes NPCs feel like walls.
 - **Consequences / tradeoffs:** Being caught always means leaving the area. NPCs can't be knocked off ledges (the shove stays on the NavMesh). Phase 2 combat should build health and damage on this stagger and impact measure.
+
+## D-030 — Phase 1 gate review: PASSED
+- **Status:** Locked
+- **Date:** 2026-10-04
+- **Decision:** Phase 1 (prototypes P1–P5) **passes**, and the project goes ahead to Phase 2 unchanged in direction. The next milestone (P6) is chosen separately.
+- **Reason:** P1–P5 proved the core technical premise of The Deep, and every planned vertical-slice play-test passed in Unity 6000.3.25f1 with all EditMode tests green:
+  - **P1:** physical interaction (move, push, grab and throw, momentum-based impacts) felt good enough to build on.
+  - **P3.1, P2:** the player can physically alter the world (authored destruction with support collapse, within a debris budget), and the changes persist by stable id through area transitions, Stop → Play, and full Unity restarts.
+  - **P4:** data-driven consequences fire from world state and are visible (route block, reputation, NPC barks, prices, jobs).
+  - **P5:** NPCs and navigation react to the changed world with no runtime NavMesh rebuilds: rerouting over the bypass in 10/10 runs, fleeing, falling, staggering, and hostile guards ejecting the player.
+- **Alternatives considered:** Simplify (cut a pillar, e.g. destruction or AI); pivot (change the core premise); repeat or extend a prototype before Phase 2.
+- **Why rejected:** No prototype failed its question, and no pillar proved too costly at prototype scale.
+- **Consequences / tradeoffs:**
+  - The prototype shortcuts below are known, not fixed. They are carried into the phases the roadmap already assigns them to:
+    - immediate saves, no saved player position or area, in-memory-only save upgrades, no event log or day counter (Phases 3–4)
+    - cube-chunk fracture instead of the Blender pipeline
+    - legacy floating text, capsule NPCs, no UI
+    - no jump or kick
+  - P4's "fresh playtester notices 3+ reactions without being told" bar was not tested with an outside player. It remains a useful check, not a gate blocker.
+  - Scenes are now maintained in the Unity Editor.

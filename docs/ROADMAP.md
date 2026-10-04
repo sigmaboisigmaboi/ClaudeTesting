@@ -14,7 +14,7 @@ Each phase is broken into small milestones (one to a few sessions each), built o
 |---|---|
 | Planning, locked decisions, repo setup | ✅ Done |
 | Phase 0 — Setup | ✅ Done (Unity 6000.3.25f1, folders, EditMode sanity test, Bootstrap scene) |
-| Phase 1 — Prototypes P1–P5 | 🔧 In progress — P1.1 ✅ done (first-person movement/look, play-tested in Unity 2026-10-04); P1.2 ✅ done (pushable physics objects, play-tested in Unity 2026-10-04); P3.1 ✅ done (persistence spike, pulled forward; play-tested in Unity 2026-10-04); P1.3 ✅ done (grab, hold, drop and throw; play-tested in Unity 2026-10-04); P1.4 ✅ done (knockback dummy, play-tested in Unity 2026-10-04). **P1 complete.** ✅ P2 — Destruction Vertical Slice done (play-tested in Unity 2026-10-04). ✅ P4 — Consequences Vertical Slice done (play-tested in Unity 2026-10-04). Phase 1 gate review (2026-10-04): P1–P4 GO; P5 chosen next. ✅ P5 — Reactive NPCs Vertical Slice done (play-tested in Unity 2026-10-04). **All Phase 1 prototypes done**; formal gate decision and next milestone not chosen yet (to be reviewed together) |
+| Phase 1 — Prototypes P1–P5 | ✅ Passed (gate review 2026-10-04, D-030) — P1.1 ✅ done (first-person movement/look, play-tested in Unity 2026-10-04); P1.2 ✅ done (pushable physics objects, play-tested in Unity 2026-10-04); P3.1 ✅ done (persistence spike, pulled forward; play-tested in Unity 2026-10-04); P1.3 ✅ done (grab, hold, drop and throw; play-tested in Unity 2026-10-04); P1.4 ✅ done (knockback dummy, play-tested in Unity 2026-10-04). **P1 complete.** ✅ P2 — Destruction Vertical Slice done (play-tested in Unity 2026-10-04). ✅ P4 — Consequences Vertical Slice done (play-tested in Unity 2026-10-04). Phase 1 gate review (2026-10-04): P1–P4 GO; P5 chosen next. ✅ P5 — Reactive NPCs Vertical Slice done (play-tested in Unity 2026-10-04). **All Phase 1 prototypes done**; **Phase 1 gate PASSED** (D-030). Next milestone (P6) not chosen yet |
 | Phases 2–6 | — |
 
 ---
@@ -93,6 +93,7 @@ Grey-box only. P1 uses the existing Bootstrap test room; later prototypes may ge
 
 ### Gate review (end of Phase 1)
 Review what each prototype answered. Decide: **go**, **simplify**, or **pivot**. Record the outcome in DECISIONS.md before starting Phase 2.
+- **Outcome (2026-10-04): PASSED, go** (D-030). Phase 2 may start once the next milestone is chosen.
 
 ---
 
