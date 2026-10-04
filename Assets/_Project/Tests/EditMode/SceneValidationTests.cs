@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
+using TheDeep.Consequences;
 using TheDeep.Destruction;
 using TheDeep.State;
 using TheDeep.World;
@@ -13,7 +14,7 @@ using UnityEngine.SceneManagement;
 namespace TheDeep.Tests.EditMode
 {
     // Guards hand-authored scene content: opens every scene in the build list and checks
-    // persistent ids, destructible setup, and area exits/spawn points.
+    // persistent ids, destructible setup, area exits/spawn points, and consequence runners.
     public class SceneValidationTests
     {
         // One thing read from a scene: which scene, which object, and the value we care about.
@@ -101,6 +102,15 @@ namespace TheDeep.Tests.EditMode
                 bool spawnExists = spawns.Any(s => s.Scene == exit.Value && s.Value == exit.Extra);
                 Assert.IsTrue(spawnExists, $"AreaExit in {exit.Scene} uses spawn '{exit.Extra}', but {exit.Value} has no AreaSpawnPoint with that id.");
             }
+        }
+
+        [Test]
+        public void ConsequenceRunners_HaveARulebook()
+        {
+            List<Found> missing = Collect<ConsequenceRunner>(r => new Found { Value = r.Rulebook != null ? "" : "missing" })
+                .Where(f => f.Value.Length > 0).ToList();
+
+            Assert.IsEmpty(missing, string.Join("\n", missing.Select(m => $"{m.Scene}/{m.Object} has no rulebook assigned")));
         }
     }
 }

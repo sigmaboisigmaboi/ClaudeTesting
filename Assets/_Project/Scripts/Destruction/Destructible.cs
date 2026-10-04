@@ -149,7 +149,7 @@ namespace TheDeep.Destruction
             state.MarkDestroyed(PersistentIdValue);
             if (!string.IsNullOrEmpty(factOnDestroyed))
                 state.Set(factOnDestroyed);
-            WorldSession.Save();
+            WorldSession.Commit(); // saves, applies consequence rules, and notifies reactors
             Debug.Log($"{name} destroyed — recorded '{PersistentIdValue}'" +
                       (string.IsNullOrEmpty(factOnDestroyed) ? "" : $" and fact '{factOnDestroyed}'") + " and saved.");
         }

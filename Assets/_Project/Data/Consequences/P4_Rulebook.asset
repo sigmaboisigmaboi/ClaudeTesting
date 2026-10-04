@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 30d57a7dadc642e69efe80c7d5cb65d2, type: 3}
+  m_Name: P4_Rulebook
+  m_EditorClassIdentifier: TheDeep::TheDeep.Consequences.ConsequenceRulebook
+  rules:
+  - id: span_collapse
+    description: "The Span collapsing cuts the Concord's trade crossing: the outpost closes the crossing and rations supplies. The Concord and Delvers blame you; the Hollowers like the chaos."
+    condition:
+      requiredFacts:
+      - p2span.bridge_destroyed
+      forbiddenFacts: []
+      requiredDestroyedIds: []
+      reputation: []
+    factsToSet:
+    - outpost.span_closed
+    - outpost.rationing
+    reputationChanges:
+    - faction: 0
+      amount: -40
+    - faction: 1
+      amount: -15
+    - faction: 2
+      amount: 20
+  - id: cache_looted
+    description: "Breaking the wall of the Hollower cache in the Span alcove counts as robbing the Hollowers."
+    condition:
+      requiredFacts: []
+      forbiddenFacts: []
+      requiredDestroyedIds:
+      - p2span.wall_alcove
+      reputation: []
+    factsToSet:
+    - outpost.cache_looted
+    reputationChanges:
+    - faction: 2
+      amount: -40
