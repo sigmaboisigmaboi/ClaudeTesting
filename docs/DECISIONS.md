@@ -171,3 +171,12 @@ Template:
 - **Alternatives considered:** A Rigidbody-based player; setting the pushed object's velocity directly.
 - **Why rejected:** A Rigidbody player means rewriting a working, play-tested controller before we know it's needed. Setting velocity directly ignores mass, so every object would feel the same weight.
 - **Consequences / tradeoffs:** Push feel depends on `pushStrength`, object mass, and friction, and may need tuning. Physics objects do not push the player back. Resolves the open point noted in D-015.
+
+## D-017 — P3.1 persistence spike: facts in WorldState, saved as JSON
+- **Status:** Locked (spike-scoped — the temporary parts are expected to be replaced in P3 proper)
+- **Date:** 2026-10-04
+- **Decision:** Persistence is pulled forward as **P3.1 — Persistence Spike**, before P1's remaining physics items and P2. A plain C# `WorldState` class holds a list of fact names and owns its own JSON save/load (`ToJson`/`FromJson`, `LoadFromDisk`/`SaveToDisk`/`DeleteSaveFile`) using Unity's built-in `JsonUtility`, writing `world_state.json` to `Application.persistentDataPath`. Facts are **one-way events** (once recorded, they stay recorded). A gameplay component (`CrateTargetPad`) only detects its event and calls `WorldState.Record`. On load, an **authored "after" state** is applied (the crate is placed on the pad) — physics positions are not saved.
+- **Reason:** Tests the core identity — "I changed something, and the world remembers" — as early as possible, using the already-proven push mechanic. Keeping JSON handling inside `WorldState` keeps gameplay scripts focused and the persistence logic testable (EditMode tests).
+- **Alternatives considered:** Waiting for P2/P3 as originally ordered; saving crate positions; a SaveManager or save-slot system; the Newtonsoft JSON package.
+- **Why rejected:** Waiting delays the most important question; saved positions contradict DESIGN (only meaningful state persists); a save framework is premature for one fact; `JsonUtility` handles a list of strings, so Newtonsoft is not needed until facts need values or dictionaries.
+- **Consequences / tradeoffs:** Temporary spike shortcuts, to be replaced in P3 proper: saving immediately when a fact changes (DESIGN §13 says save at area transitions), the pad component loading its own copy of the world state, and no `PersistentId`. P1's remaining physics items stay open.
