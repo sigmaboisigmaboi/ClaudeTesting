@@ -13,8 +13,8 @@ Each phase is broken into small milestones (one to a few sessions each), built o
 | Step | Status |
 |---|---|
 | Planning, locked decisions, repo setup | ✅ Done |
-| Phase 0 — Setup | 🔧 In progress (Unity 6000.3.25f1 project created; folders + first test under review) |
-| Phase 1 — Prototypes P1–P5 | — |
+| Phase 0 — Setup | ✅ Done (Unity 6000.3.25f1, folders, EditMode sanity test, Bootstrap scene) |
+| Phase 1 — Prototypes P1–P5 | 🔧 In progress — P1.1 (first-person movement/look) implemented, awaiting Unity play-test |
 | Phases 2–6 | — |
 
 ---

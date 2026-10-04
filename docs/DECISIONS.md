@@ -153,3 +153,12 @@ Template:
 - **Alternatives considered:** Unity 6.0 LTS; newer Update releases (6.5/6.6).
 - **Why rejected:** 6.0 is at end of support; Update releases have short support windows we don't need.
 - **Consequences / tradeoffs:** Opening the project with a different editor version will prompt an upgrade — decline it. The template added defaults we haven't reviewed yet (sample scene, tutorial readme, and the Unity Version Control, Visual Scripting and Multiplayer Center packages); they are kept untouched for now and removed only by a deliberate, reviewed change.
+
+## D-015 — Player controller: CharacterController + project-wide Input Actions
+- **Status:** Locked
+- **Date:** 2026-10-04
+- **Decision:** The first-person player uses Unity's built-in **CharacterController** driven by one small script (`FirstPersonController`). Input is read from the existing **project-wide Input Actions** asset (`Assets/InputSystem_Actions.inputactions`, actions `Player/Move` and `Player/Look`) via `InputSystem.actions.FindAction`. No `PlayerInput` component, generated wrapper class, or second actions asset.
+- **Reason:** CharacterController handles collision, slopes, and steps without fighting the physics engine — the simplest reliable first-person movement. Reusing the one actions asset avoids two competing input setups and needs no Inspector wiring.
+- **Alternatives considered:** Rigidbody-based controller; `PlayerInput` component; a new actions asset or generated C# wrapper.
+- **Why rejected:** A Rigidbody controller needs more tuning (friction, slopes, jitter) for no P1.1 benefit; the other input options add setup without adding capability.
+- **Consequences / tradeoffs:** Actions are looked up by name — renaming them in the asset breaks the script (it fails loudly on start). CharacterController does not push Rigidbodies by itself; P1.2 (grab/throw/push) will need to handle that deliberately.
