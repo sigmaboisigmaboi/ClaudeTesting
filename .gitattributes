@@ -11,6 +11,7 @@
 *.unity      text eol=lf
 *.prefab     text eol=lf
 *.asset      text eol=lf
+**/NavMesh-*.asset binary
 *.meta       text eol=lf
 *.mat        text eol=lf
 *.anim       text eol=lf
