@@ -21,7 +21,8 @@ namespace TheDeep.World
 
         void Awake()
         {
-            worldState = WorldState.LoadFromDisk();
+            // Shared session state (D-020): never load a private copy, or saves overwrite each other.
+            worldState = WorldSession.State;
             Debug.Log($"Loaded world state: {worldState.FactCount} fact(s) from {WorldState.SaveFilePath}");
 
             if (worldState.Has(Fact))
@@ -49,8 +50,7 @@ namespace TheDeep.World
         [ContextMenu("Delete Saved World State")]
         void DeleteSavedWorldState()
         {
-            WorldState.DeleteSaveFile();
-            Debug.Log($"Deleted saved world state at {WorldState.SaveFilePath}");
+            WorldSession.DeleteSave();
         }
     }
 }

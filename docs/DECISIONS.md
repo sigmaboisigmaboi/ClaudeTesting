@@ -173,7 +173,7 @@ Template:
 - **Consequences / tradeoffs:** Push feel depends on `pushStrength`, object mass, and friction, and may need tuning. Physics objects do not push the player back. Resolves the open point noted in D-015.
 
 ## D-017 — P3.1 persistence spike: facts in WorldState, saved as JSON
-- **Status:** Locked (spike-scoped — the temporary parts are expected to be replaced in P3 proper)
+- **Status:** Locked (spike-scoped). The "pad loads its own copy" shortcut is **superseded by D-020** (shared `WorldSession`); immediate saving remains until P3 proper.
 - **Date:** 2026-10-04
 - **Decision:** Persistence is pulled forward as **P3.1 — Persistence Spike**, before P1's remaining physics items and P2. A plain C# `WorldState` class holds a list of fact names and owns its own JSON save/load (`ToJson`/`FromJson`, `LoadFromDisk`/`SaveToDisk`/`DeleteSaveFile`) using Unity's built-in `JsonUtility`, writing `world_state.json` to `Application.persistentDataPath`. Facts are **one-way events** (once recorded, they stay recorded). A gameplay component (`CrateTargetPad`) only detects its event and calls `WorldState.Record`. On load, an **authored "after" state** is applied (the crate is placed on the pad) — physics positions are not saved.
 - **Reason:** Tests the core identity — "I changed something, and the world remembers" — as early as possible, using the already-proven push mechanic. Keeping JSON handling inside `WorldState` keeps gameplay scripts focused and the persistence logic testable (EditMode tests).
@@ -198,3 +198,39 @@ Template:
 - **Alternatives considered:** Kinetic energy (½·m·v²); the solver's `Collision.impulse`; physics-only knockback with no added shove.
 - **Why rejected:** Energy makes speed dominate (a fast light crate would outweigh a slow heavy one far more than it feels); `impulse` depends on the target's own mass and solver details, so it's harder to reason about; physics-only knockback was too subtle on a character-sized mass to evaluate.
 - **Consequences / tradeoffs:** `relativeVelocity` includes sliding motion, so glancing hits can read slightly stronger than head-on ones. The knockback scale is a feel value, not physics. When real damage arrives (Phase 2), it should build on this measure rather than a new one.
+
+## D-020 — One shared WorldSession; WorldState v2 with destroyed ids
+- **Status:** Locked
+- **Date:** 2026-10-04
+- **Decision:** During play, all code reads and records through `WorldSession.State`: one `WorldState` loaded from disk on first use, kept across scene loads, and reset at the start of every Play session (`RuntimeInitializeOnLoadMethod`). `WorldState` v2 adds a `destroyedIds` list (`MarkDestroyed`/`IsDestroyed`) beside `facts`; version 1 files load with an empty list. `CrateTargetPad` now uses the session instead of loading its own copy. Saving is still immediate on destruction or fact change, plus on every area exit.
+- **Reason:** With more than one recorder per session, private copies overwrite each other's saves (lost updates) — the temporary P3.1 shortcut noted in D-017. A single static holder is the smallest fix; destroyed ids are the natural record for destruction.
+- **Alternatives considered:** A SaveManager MonoBehaviour/singleton in each scene; a dictionary keyed by area (Newtonsoft JSON).
+- **Why rejected:** A scene object must be carried across scene loads and adds setup; a list of globally unique ids works with the built-in `JsonUtility` and needs no new package.
+- **Consequences / tradeoffs:** Static state, so it must be reset per Play session (done). Immediate saves are fine at this scale; P3 proper decides final save timing. Supersedes D-017's "pad loads its own copy" shortcut.
+
+## D-021 — Destructible model: intact → pre-placed pieces → rubble, with integrity and support links
+- **Status:** Locked
+- **Date:** 2026-10-04
+- **Decision:** A `Destructible` (with a `PersistentId`) has a collider on its root and three authored children: **Intact**, **Fractured** (inactive, pre-placed piece Rigidbodies), and **Rubble** (inactive, static after-state). Impacts from pushed or thrown physics objects deal damage = impact strength (D-019) above a threshold, reducing **integrity** (structures only — not a health system). At zero it breaks: intact off, pieces on (with an outward burst from the hit point), destruction recorded and saved. An optional `supports` list makes it collapse when all supports are destroyed (the bridge deck). On load, a recorded Destructible shows only its Rubble. Objects currently held by the player deal no damage. The pure rules live in `DestructionRules` and are unit-tested. For the P2 slice the pieces are cube chunks; a Blender-fractured mesh can later replace a Fractured child without code changes.
+- **Reason:** Matches DESIGN §7 (authored destruction, authored support graph, persisted state) with no runtime fracture, and keeps the gameplay rules testable outside Unity.
+- **Alternatives considered:** Runtime mesh fracture; physics joints that break; an event bus for support notifications; letting held objects ram structures.
+- **Why rejected:** Runtime fracture is out of scope (D-006); joints are harder to tune and persist; dependents are found directly when something breaks, which is enough at this scale; ramming with held objects would make throwing pointless.
+- **Consequences / tradeoffs:** Every destructible needs hand-authored pieces and rubble. Support notification scans Destructibles when something breaks (fine for dozens, revisit for hundreds).
+
+## D-022 — Debris: freeze in place under a budget; authored rubble after reload
+- **Status:** Locked
+- **Date:** 2026-10-04
+- **Decision:** Broken pieces simulate briefly, then **freeze in place** (kinematic, colliders kept) after a settle time or as soon as they all sleep. A shared `DebrisBudget` caps actively simulating pieces (40); a new break that would exceed it freezes the oldest groups early. When a scene loads already destroyed, the authored **Rubble** is shown instead of pieces — piece positions are never saved.
+- **Reason:** Freezing avoids a visible "pop" while the player watches; the budget keeps physics cost bounded; authored rubble keeps saves tiny and matches DESIGN §13 (no saved physics state).
+- **Alternatives considered:** Swapping pieces to rubble while the player watches; saving piece positions; fading pieces out.
+- **Why rejected:** A visible swap looks wrong; saved positions contradict the save design; fading loses the "world stays changed" feel.
+- **Consequences / tradeoffs:** The debris layout after a return differs from what the player saw — accepted, and mostly hidden (bridge debris falls into the chasm). Frozen pieces still cost rendering until the scene unloads.
+
+## D-023 — Minimal area transitions (pulled forward from P3)
+- **Status:** Locked
+- **Date:** 2026-10-04
+- **Decision:** An `AreaExit` trigger saves the session and loads a target scene by name; an `AreaSpawnPoint` with the matching id places the player (briefly disabling the CharacterController to move it). Scenes used this way must be in the build scene list. EditMode scene-validation tests check that exits target build scenes with a matching spawn point, and that every `PersistentId` is filled in and unique.
+- **Reason:** "Leave and come back to a changed world" is the core identity test, and needs real scene unloading/loading — stop/Play alone doesn't prove it.
+- **Alternatives considered:** Loading screens or additive scene streaming; only testing via stop/Play.
+- **Why rejected:** Streaming/loading screens are beyond a prototype (D-005 keeps transitions simple); stop/Play doesn't exercise in-session unload/reload.
+- **Consequences / tradeoffs:** A full scene load per transition (fine for small areas). Each scene has its own Player copy; there is no carried-over player state yet (held objects stay behind).
