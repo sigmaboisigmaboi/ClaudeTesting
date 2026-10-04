@@ -1572,6 +1572,7 @@ GameObject:
   - component: {fileID: 1700000035}
   - component: {fileID: 1700000036}
   - component: {fileID: 1700000037}
+  - component: {fileID: 1700000038}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -1651,6 +1652,27 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: TheDeep::TheDeep.Player.PlayerPushRigidbodies
   pushStrength: 300
+--- !u!114 &1700000038
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1700000033}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 982e75c1c98e46819f12e308ac2b3ed6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TheDeep::TheDeep.Player.PlayerGrabThrow
+  cameraTransform: {fileID: 480405456}
+  grabRange: 3
+  grabRadius: 0.2
+  maxGrabMass: 30
+  holdDistance: 2
+  followStrength: 15
+  maxHoldSpeed: 15
+  autoDropDistance: 3
+  throwImpulse: 15
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
