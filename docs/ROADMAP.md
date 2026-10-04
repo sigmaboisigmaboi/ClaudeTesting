@@ -14,7 +14,7 @@ Each phase is broken into small milestones (one to a few sessions each), built o
 |---|---|
 | Planning, locked decisions, repo setup | ✅ Done |
 | Phase 0 — Setup | ✅ Done (Unity 6000.3.25f1, folders, EditMode sanity test, Bootstrap scene) |
-| Phase 1 — Prototypes P1–P5 | 🔧 In progress — P1.1 ✅ done (first-person movement/look, play-tested in Unity 2026-10-04); next sub-step not started |
+| Phase 1 — Prototypes P1–P5 | 🔧 In progress — P1.1 ✅ done (first-person movement/look, play-tested in Unity 2026-10-04); P1.2 ✅ done (pushable physics objects, play-tested in Unity 2026-10-04); next sub-step not started |
 | Phases 2–6 | — |
 
 ---
@@ -29,7 +29,7 @@ Each phase is broken into small milestones (one to a few sessions each), built o
 
 ## Phase 1 — Prototype track (6–10 weeks total)
 
-Grey-box only, in `Assets/_Project/Scenes/Prototypes/`. Each prototype answers **one** question and is timeboxed — if it runs over, we stop and decide (simplify, pivot, or extend) rather than drifting.
+Grey-box only. P1 uses the existing Bootstrap test room; later prototypes may get their own scenes under `Assets/_Project/Scenes/Prototypes/` if they need a separate setup. Each prototype answers **one** question and is timeboxed — if it runs over, we stop and decide (simplify, pivot, or extend) rather than drifting.
 
 **Prototype code policy:** pure-logic code (facts, rules, save data) is written to be kept and hardened later. Scene/feel code may be rewritten in later phases — but any rewrite is proposed first, never done silently.
 
@@ -42,6 +42,7 @@ Grey-box only, in `Assets/_Project/Scenes/Prototypes/`. Each prototype answers *
 - **Done:** the checklist passes and the interaction feels promising. Not polished.
 - **Progress:**
   - ✅ **P1.1 — First-person player foundation** (2026-10-04): `FirstPersonController` (CharacterController) with WASD movement, mouse look with vertical clamp, gravity/grounding, and collision, in a small Bootstrap test room. Play-tested in Unity 6000.3.25f1: spawn on floor, movement, look and clamp, gravity, wall and block collision, cursor lock/release all passed. Jump deliberately deferred to a separate small step.
+  - ✅ **P1.2 — Pushable physics objects** (2026-10-04): `PlayerPushRigidbodies` (separate component, mass-aware horizontal pushes) and three crates in the Bootstrap room — light 5 kg, medium 25 kg, heavy 150 kg. Play-tested in Unity 6000.3.25f1: light/medium/heavy crates each behaved as intended, crate–environment and crate–crate collisions worked, no tunneling or instability, P1.1 movement unchanged, Console clean, EditMode tests passed — and pushing felt good.
 
 ### P2 — Destruction (1–2 weeks)
 - **Question:** *Can our Blender → Unity pre-fractured pipeline look good and stay performant?*
