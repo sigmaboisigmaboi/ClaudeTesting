@@ -62,7 +62,7 @@ Template:
 - **Reason:** A strong, consistent style is achievable for a small team, makes "breakable" objects easy to communicate (wood, rust, cracked concrete, warning paint), and hides imperfections in authored destruction.
 - **Alternatives considered:** Realistic art; generic "cheap low-poly".
 - **Why rejected:** Realism is far too expensive to produce. Generic low-poly reads as unintentional and undersells the setting.
-- **Consequences / tradeoffs:** The look depends heavily on **lighting** and a reusable **modular kit** (walls, pipes, catwalks, signage, decals). Lighting-heavy scenes make lighting *after* destruction harder (see DESIGN §13 Performance) — we accept some realtime local lights in destructible areas.
+- **Consequences / tradeoffs:** The look depends heavily on **lighting** and a reusable **modular kit** (walls, pipes, catwalks, signage, decals). Lighting-heavy scenes make lighting *after* destruction harder (see DESIGN §14 Performance) — we accept some realtime local lights in destructible areas.
 
 ## D-005 — Connected areas instead of a seamless open world
 - **Status:** Locked
