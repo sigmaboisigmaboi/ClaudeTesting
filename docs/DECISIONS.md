@@ -162,3 +162,12 @@ Template:
 - **Alternatives considered:** Rigidbody-based controller; `PlayerInput` component; a new actions asset or generated C# wrapper.
 - **Why rejected:** A Rigidbody controller needs more tuning (friction, slopes, jitter) for no P1.1 benefit; the other input options add setup without adding capability.
 - **Consequences / tradeoffs:** Actions are looked up by name — renaming them in the asset breaks the script (it fails loudly on start). CharacterController does not push Rigidbodies by itself; P1.2 (grab/throw/push) will need to handle that deliberately.
+
+## D-016 — Player pushes physics objects via OnControllerColliderHit
+- **Status:** Locked
+- **Date:** 2026-10-04
+- **Decision:** The player keeps its CharacterController (D-015). A separate component, `PlayerPushRigidbodies`, uses Unity's `OnControllerColliderHit` to push non-kinematic Rigidbodies the player walks into: a horizontal impulse in the walking direction, scaled by frame time, applied at the contact point. Contacts from above (standing on an object) are ignored. One tunable value: `pushStrength` (default 300 N).
+- **Reason:** A CharacterController treats Rigidbodies like walls, so pushing must be added deliberately. An impulse respects mass (light objects scoot, heavy ones resist), works at any frame rate, and pushing at the contact point lets objects tip naturally. A separate component leaves the tested `FirstPersonController` untouched and can be disabled or removed on its own.
+- **Alternatives considered:** A Rigidbody-based player; setting the pushed object's velocity directly.
+- **Why rejected:** A Rigidbody player means rewriting a working, play-tested controller before we know it's needed. Setting velocity directly ignores mass, so every object would feel the same weight.
+- **Consequences / tradeoffs:** Push feel depends on `pushStrength`, object mass, and friction, and may need tuning. Physics objects do not push the player back. Resolves the open point noted in D-015.
