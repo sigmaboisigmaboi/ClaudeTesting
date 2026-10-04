@@ -28,7 +28,7 @@ Template:
 ## D-001 — Unity 6 with URP
 - **Status:** Locked
 - **Date:** 2026-10-04
-- **Decision:** Build the game in **Unity 6 (LTS)** using the **Universal Render Pipeline (URP)**. The exact LTS version is recorded here when the project is created in Phase 0.
+- **Decision:** Build the game in **Unity 6 (LTS)** using the **Universal Render Pipeline (URP)**. The exact version is pinned in D-014.
 - **Reason:** Mature physics (PhysX), the largest tutorial/answer base for exactly the systems we need (character controllers, rigidbodies, NavMesh, save systems), good tooling for data (ScriptableObjects), and logic written in plain text C# files that Claude Code can read, write, and test. The owner already wants to learn Unity. URP is lighter and simpler than HDRP and suits a stylized look.
 - **Alternatives considered:** Unreal Engine 5; Godot 4; Unity with HDRP.
 - **Why rejected:**
@@ -144,3 +144,12 @@ Template:
 - **Alternatives considered:** Unity project in a subfolder; a full folder tree up front.
 - **Why rejected:** A subfolder adds a path level to everything; an up-front tree creates empty folders that may never be used.
 - **Consequences / tradeoffs:** Unity Hub creates projects in a new folder and may refuse an existing non-empty one, so Phase 0 creates the project elsewhere and moves `Assets/`, `Packages/`, `ProjectSettings/` into the repo (step-by-step instructions given then).
+
+## D-014 — Pinned Unity version: 6.3 LTS (6000.3.25f1), "Universal 3D" template
+- **Status:** Locked
+- **Date:** 2026-10-04
+- **Decision:** The project uses **Unity 6000.3.25f1** (Unity 6.3 LTS), created from Unity Hub's **Universal 3D** (URP) template. `ProjectSettings/ProjectVersion.txt` is the source of truth. Upgrades (even patch versions) happen only through a new decision entry, on their own branch.
+- **Reason:** 6.3 is the newest LTS (supported until December 2027); Unity 6.0 LTS support ends October 2026. Pinning one exact version prevents "works on my machine" differences and accidental project upgrades.
+- **Alternatives considered:** Unity 6.0 LTS; newer Update releases (6.5/6.6).
+- **Why rejected:** 6.0 is at end of support; Update releases have short support windows we don't need.
+- **Consequences / tradeoffs:** Opening the project with a different editor version will prompt an upgrade — decline it. The template added defaults we haven't reviewed yet (sample scene, tutorial readme, and the Unity Version Control, Visual Scripting and Multiplayer Center packages); they are kept untouched for now and removed only by a deliberate, reviewed change.

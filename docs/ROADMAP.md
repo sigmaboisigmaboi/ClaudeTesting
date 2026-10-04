@@ -13,7 +13,7 @@ Each phase is broken into small milestones (one to a few sessions each), built o
 | Step | Status |
 |---|---|
 | Planning, locked decisions, repo setup | ✅ Done |
-| Phase 0 — Setup | ⏳ Next (awaiting go-ahead) |
+| Phase 0 — Setup | 🔧 In progress (Unity 6000.3.25f1 project created; folders + first test under review) |
 | Phase 1 — Prototypes P1–P5 | — |
 | Phases 2–6 | — |
 
@@ -21,7 +21,7 @@ Each phase is broken into small milestones (one to a few sessions each), built o
 
 ## Phase 0 — Setup (1–2 weeks)
 - **Goal:** a working Unity project under version control.
-- **Features:** install Unity 6 LTS (URP template) via Unity Hub; create the project and move `Assets/`, `Packages/`, `ProjectSettings/` into the repo root; `git lfs install`; confirm Unity defaults (Visible Meta Files, Force Text serialization); create `Assets/_Project/` with `Scenes/`, `Scripts/` (+ runtime assembly definition) and `Tests/EditMode/` (+ test assembly definition); one trivial passing EditMode test; record the exact Unity version in DECISIONS.md.
+- **Features:** install Unity 6 LTS (URP template) via Unity Hub; create the project and move `Assets/`, `Packages/`, `ProjectSettings/` into the repo root; `git lfs install`; confirm Unity defaults (Visible Meta Files, Force Text serialization); create `Assets/_Project/` with `Scenes/`, `Scripts/` and `Tests/EditMode/` (+ test assembly definition; the runtime assembly definition is added with the first real script in P1, because Unity warns about an assembly definition with no scripts); one trivial passing EditMode test; record the exact Unity version in DECISIONS.md.
 - **Dependencies:** none.
 - **Test:** project opens cleanly; empty scene plays; the test passes in the Test Runner; `git status` shows no `Library/` or `Temp/` files; commit/push works.
 - **What could go wrong:** wrong Unity version/template; `Library/` committed; LFS not installed so binaries go into normal Git.
