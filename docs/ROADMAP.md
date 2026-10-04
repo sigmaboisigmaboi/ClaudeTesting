@@ -14,7 +14,7 @@ Each phase is broken into small milestones (one to a few sessions each), built o
 |---|---|
 | Planning, locked decisions, repo setup | ✅ Done |
 | Phase 0 — Setup | ✅ Done (Unity 6000.3.25f1, folders, EditMode sanity test, Bootstrap scene) |
-| Phase 1 — Prototypes P1–P5 | 🔧 In progress — P1.1 ✅ done (first-person movement/look, play-tested in Unity 2026-10-04); P1.2 ✅ done (pushable physics objects, play-tested in Unity 2026-10-04); P1 remaining physics items still open. P3.1 ✅ done (persistence spike, pulled forward; play-tested in Unity 2026-10-04); next sub-step not started |
+| Phase 1 — Prototypes P1–P5 | 🔧 In progress — P1.1 ✅ done (first-person movement/look, play-tested in Unity 2026-10-04); P1.2 ✅ done (pushable physics objects, play-tested in Unity 2026-10-04); P3.1 ✅ done (persistence spike, pulled forward; play-tested in Unity 2026-10-04); P1.3 ✅ done (grab, hold, drop and throw; play-tested in Unity 2026-10-04); next sub-step not started |
 | Phases 2–6 | — |
 
 ---
@@ -43,7 +43,8 @@ Grey-box only. P1 uses the existing Bootstrap test room; later prototypes may ge
 - **Progress:**
   - ✅ **P1.1 — First-person player foundation** (2026-10-04): `FirstPersonController` (CharacterController) with WASD movement, mouse look with vertical clamp, gravity/grounding, and collision, in a small Bootstrap test room. Play-tested in Unity 6000.3.25f1: spawn on floor, movement, look and clamp, gravity, wall and block collision, cursor lock/release all passed. Jump deliberately deferred to a separate small step.
   - ✅ **P1.2 — Pushable physics objects** (2026-10-04): `PlayerPushRigidbodies` (separate component, mass-aware horizontal pushes) and three crates in the Bootstrap room — light 5 kg, medium 25 kg, heavy 150 kg. Play-tested in Unity 6000.3.25f1: light/medium/heavy crates each behaved as intended, crate–environment and crate–crate collisions worked, no tunneling or instability, P1.1 movement unchanged, Console clean, EditMode tests passed — and pushing felt good.
-  - ⏳ **Still open in P1:** grab, hold and throw; kick; one breakable crate; knockback dummy. Persistence was pulled forward first (see P3.1).
+  - ✅ **P1.3 — Grab, Hold, Drop and Throw** (2026-10-04): `PlayerGrabThrow` (separate component). E picks up / drops, left mouse throws; velocity-based holding with gravity off and player collision ignored while held; mass limit 30 kg (light and medium crates grabbable, heavy not); mass-aware throw; auto-drop if snagged. Play-tested in Unity 6000.3.25f1: light crate grab/carry/drop/throw and medium crate grab/carry/throw worked; heavy crate could not be grabbed but could still be pushed; crate–crate physics worked; carrying the medium crate onto the P3.1 pad recorded the fact, and stop/Play persistence and Delete Saved World State still worked; P1.1 and P1.2 behavior unchanged; EditMode tests passed; Console clean.
+  - ⏳ **Still open in P1:** kick; one breakable crate; knockback dummy. Persistence was pulled forward first (see P3.1).
 
 ### P2 — Destruction (1–2 weeks)
 - **Question:** *Can our Blender → Unity pre-fractured pipeline look good and stay performant?*
