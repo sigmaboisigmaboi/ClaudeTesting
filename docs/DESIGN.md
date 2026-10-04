@@ -1,18 +1,42 @@
-# The Deep — Game Design, Technical Design & Development Roadmap
+# The Deep — Game Design & Technical Design
 
-## Context
+## Status
 
-"The Deep" is a new, original game. The repo (`sigmaboisigmaboi/ClaudeTesting`, branch `claude/funny-lamport-y8jchs`) is currently **empty** — no commits, no code — so there is nothing existing to reuse or preserve. This document is the planning deliverable requested: no code is written in this phase. Its job is to turn an ambitious concept into something a **beginner working with AI assistance** can actually ship, by being honest about difficulty, cutting scope aggressively for the first version, and proving the risky technology with small prototypes first.
+**Pre-production — design decisions are locked** (2026-10-04). Each locked decision, with its reasons and tradeoffs, is in [DECISIONS.md](DECISIONS.md). The prototype plan and phases are in [ROADMAP.md](ROADMAP.md). No gameplay code exists yet.
 
-### Assumptions I made (please confirm or correct during review)
+Locked in short: Unity 6 + URP + C# · first-person · stylized industrial sci-fi / underground brutalism · connected areas (not open world) · authored/pre-fractured destruction · event-driven simulation · three factions · single-player · hand-built levels · solo part-time developer working with Claude Code, PC (Windows).
 
-| # | Assumption | Why it matters |
-|---|---|---|
-| A1 | **3D, single-player, PC (Windows)** | Multiplayer + physics + persistent destruction is an order of magnitude harder (networked physics is a famously unsolved-for-indies problem). |
-| A2 | **First-person camera** for MVP | Removes the single biggest beginner time-sink: character animation (rigging, blending, IK, third-person camera collision in tight tunnels). Physics grab/throw also *feels* better in first person (Half-Life 2, Prey, Amid Evil). Third-person can be revisited later but would be a big change. |
-| A3 | **Stylized/low-poly art**, modeled in Blender | Realistic art would dominate the schedule. Stylized also hides imperfect destruction. |
-| A4 | Solo developer, part-time, with Claude Code | Drives every scope decision below. |
-| A5 | Hand-built levels, not procedural | See "Procedural generation" below. |
+## Core identity — "Your choices become the enemy"
+
+This is the feature we protect above all others. **The most important feature is not the size of the world; it is: "I changed something, and the world remembers."**
+
+The canonical example, which every system must be able to support:
+
+```
+Player destroys the bridge
+  → world event recorded
+  → route changes (crossing blocked, Old Shaft bypass opens)
+  → NPCs react (barks, fleeing, ration lines)
+  → faction reputation changes
+  → trade changes (prices, vendor stock)
+  → mission availability changes
+  → player meets the consequences later
+```
+
+**Scope rule (tie-breaker):** a small area that reacts convincingly beats a giant world with superficial systems. When choosing between "more content" and "deeper reaction to what already exists," choose reaction (D-011).
+
+## Glossary
+
+| Term | Meaning |
+|---|---|
+| **District** | A group of connected areas. The MVP has one: the **Upper Works**. |
+| **Area** | One playable place = one Unity scene (e.g., Concord Market). Areas connect through **exits**. |
+| **Infrastructure node** | A small, fixed set of important structures whose state drives consequences (MVP: the **Bridge** and the **Pump**). States: Intact / Damaged / Destroyed. |
+| **Fact** | One named value in the world state, e.g. `span_bridge.state = destroyed`. Saved. |
+| **Event** | Something meaningful that happened (e.g., `StructureDestroyed span_bridge`). Recorded in the event log and may set facts. |
+| **World tick** | The moment consequence rules run: area transition, resting, mission completion. Nothing off-screen changes between ticks. |
+| **Day** | The in-game day counter, used for delayed consequences. MVP default: advances when the player rests or completes a mission (see open items). |
+| **Settlement condition** | Stable / Strained / Crisis / Abandoned — derived from resource supply. |
 
 ---
 
@@ -41,7 +65,7 @@
 
 ---
 
-## 1. Engine comparison & recommendation
+## 1. Engine comparison & decision
 
 | Criterion | Unity 6 (C#) | Unreal 5 (C++/Blueprints) | Godot 4 (GDScript/C#) |
 |---|---|---|---|
@@ -58,7 +82,7 @@
 | Learning curve | Moderate | Steep | Gentle |
 | Your interest | ✅ listed | — | — |
 
-**Recommendation: Unity 6 LTS with URP (Universal Render Pipeline).**
+**Decision (locked, D-001/D-002): Unity 6 LTS with URP (Universal Render Pipeline), C#.**
 
 Why:
 - C# is beginner-friendly and the code lives in plain text files — the best fit for working with Claude Code, which can write, read, and unit-test that code.
@@ -69,12 +93,12 @@ Why:
 
 **Known Unity limitation for our workflow:** Claude Code cannot see the editor or play the game. Scenes and prefabs must be set up by you in the editor, guided step by step. Claude can write scripts, data, tests, and docs — and can run EditMode tests via Unity's command line if we set that up.
 
-## 2. Recommended tech stack
+## 2. Tech stack
 
 | Area | Choice | Reason |
 |---|---|---|
-| Engine | Unity 6 LTS | Above |
-| Render pipeline | URP | Lighter, simpler than HDRP; good for dark scenes with stylized art |
+| Engine | Unity 6 LTS (exact version recorded in DECISIONS.md at Phase 0) | Above |
+| Render pipeline | URP | Lighter, simpler than HDRP; suits a stylized, lighting-driven look |
 | Language | C# | Unity standard |
 | Navigation | `com.unity.ai.navigation` (official) | NavMesh surfaces, NavMeshLinks for bridges |
 | Input | New Input System (official) | Rebinding, gamepad support later |
@@ -88,11 +112,13 @@ Why:
 
 ## 3. MVP definition
 
-**One-sentence MVP:** *A single underground district of ~4 connected zones where the player can fight with physics, break key structures, and see that destruction permanently change routes, a faction's attitude, NPC dialogue, and the next mission — and all of it survives save/load.*
+**One-sentence MVP:** *A single underground district of ~4 connected areas where the player can fight with physics, break key structures, and see that destruction permanently change routes, a faction's attitude, NPC dialogue, and the next mission — and all of it survives save/load.*
+
+MVP target (locked): 1 district · ~4 connected areas · 3 factions · 2 major infrastructure/destruction systems · physics-based interaction · basic combat · persistent world state · faction reactions · NPC reactions · mission consequences · save/load persistence.
 
 MVP content:
 - **Setting:** "The Upper Works" — the shallowest layer.
-- **4 zones** (separate Unity scenes):
+- **4 areas** (one Unity scene each):
   1. **Concord Market** (hub town, vendors, faction HQ)
   2. **The Span** (a chasm crossed by a destructible bridge — the trade route)
   3. **Pumpworks** (a water facility that can be sabotaged or defended)
@@ -101,19 +127,21 @@ MVP content:
 - **2 infrastructure nodes** with persistent states: the Bridge and the Pump.
 - **3–4 enemy types**, 1 melee tool, 1 ranged weapon, explosives, grab/throw.
 - **~6–10 missions** (some generated from templates by world state).
-- **Save/load** at checkpoints and zone transitions.
+- **Save/load** at checkpoints and area transitions.
 - **The consequence chain must work end to end** for both nodes. That is the whole point of the MVP.
 
 What the MVP proves: "The world reacts to me" is fun, technically sound, and buildable.
 
-Rough time estimate (honest, with big uncertainty): **6–12 months part-time** for a beginner with AI help, assuming scope holds. Scope creep is the main threat, not the tech.
+Not in the MVP: going deeper. The MVP loop ends at "return to a changed district"; descending to new layers starts in 1.0.
+
+Rough time estimate (honest, with big uncertainty): **7–12 months part-time** (the sum of the ROADMAP phase estimates) for a beginner with AI help, assuming scope holds. Scope creep is the main threat, not the tech.
 
 ### Version 1.0
-- 3 depth layers (Upper Works, The Sump/industrial + farms, The Ruins), ~12–18 zones
-- 4–5 factions (adds Garrison/military and the Deep-dwellers at the bottom)
+- 3 depth layers (Upper Works, The Sump/industrial + farms, The Ruins), ~12–18 areas
+- Possibly 4–5 factions (Garrison/military, Deep-dwellers) — each requires a new decision entry (D-008)
 - 6–10 infrastructure nodes (rail depot, power plant, farm caverns, dam, gates)
-- Territory: zones can change controlling faction based on events
-- Delayed consequences ("3 days later, refugees arrive at the Market")
+- Territory: more areas with contested control; factions act on territory goals
+- Longer delayed-consequence chains ("3 days later, refugees arrive at the Market")
 - Named NPCs who reference past events
 - Rail system as fast travel between hubs
 - 8–12 enemy types, ~8 weapons/tools, more chain-reaction hazards
@@ -126,16 +154,37 @@ Rough time estimate (honest, with big uncertainty): **6–12 months part-time** 
 - Vehicles (mine carts, drilling rigs)
 - Richer economy simulation, trade caravans as physical entities
 - NPC schedules for named characters
-- Small procedural cave sections between authored zones
+- Small procedural cave sections between authored areas
 - New Game+ / alternate starts
 - Modding via data files
 
-## 4. Core game loop
+## 4. Art direction
+
+**Locked (D-004): stylized industrial sci-fi / underground brutalism.** The game should look stylized and *intentional*, never "cheap low-poly."
+
+Visual themes:
+- Massive concrete architecture — monumental, heavy, carved into rock
+- Rusty industrial machinery, pipes and cables everywhere
+- Mining equipment: drills, carts, cranes, conveyor belts
+- Industrial hazards: gas tanks, steam vents, exposed wiring, hanging loads
+- Strong lighting and signage: work lights, warning stripes, painted faction marks, stencilled directions
+- Deeper = older and stranger: ancient structures and unfamiliar geometry replace human engineering
+
+How we make it look intentional on a small budget:
+- **Big, simple shapes** with chamfered edges, and few small details. The silhouette carries the scale.
+- A **modular kit** (wall, floor, pillar, pipe, catwalk, door, sign pieces) reused everywhere, with variety from materials and decals.
+- **Lighting does the heavy lifting**: dark caves with strong colored practical lights. Each faction has a color, which also helps readability.
+- **Decals and signage** for storytelling (graffiti after the bridge falls, ration notices during a water crisis). These are cheap ways to *show* consequences.
+- **Consistent "breakable" language**: wood, rusted metal, cracked concrete and hazard paint mean "this can break." Raw rock means it can't.
+
+Tradeoff: a lighting-driven look makes lighting after destruction harder (see §14 Performance).
+
+## 5. Core game loop
 
 ```
         ┌────────────────────────────────────────────┐
         ▼                                            │
-  Enter a zone ──► Read the situation (who's here,   │
+  Enter an area ─► Read the situation (who's here,   │
                    what's at stake, what's breakable)│
         │                                            │
         ▼                                            │
@@ -159,12 +208,12 @@ Rough time estimate (honest, with big uncertainty): **6–12 months part-time** 
   prices, new enemies, new missions, NPCs talk ──────┘
         │
         ▼
-  Unlock / be pushed toward the next depth layer
+  (1.0+) Unlock / be pushed toward the next depth layer
 ```
 
-Changes from your draft:
+Design notes:
 - **"Read the situation" step:** consequences only feel meaningful if the player can *see* what's at stake *before* acting (e.g., "this bridge carries all water to the Market"). Informed choices > surprise punishment.
-- **Consequences resolve at transitions ("world tick")**, not continuously — this is the technical trick that makes the whole game feasible (see World Simulation).
+- **Consequences resolve at world ticks** (area transition, rest, mission completion), not continuously — this is the technical trick that makes the whole game feasible (see §12 World Simulation).
 - **Multiple approaches** to each situation, so destruction is a choice, not the only tool.
 
 Why it's fun:
@@ -173,26 +222,28 @@ Why it's fun:
 3. **Long loop** (hours): returning to a place you changed and seeing the ripple. This is the hook — "my choices did that." It also creates *emergent stories* players retell.
 4. **Tension:** destruction is powerful in the moment but costs you later. Power with a price is a classic recipe for interesting decisions.
 
-## 5. World design
+## 6. World design
 
-- **Structure: semi-open "connected hubs"** (think Metro Exodus / Dishonored / Metroid-style regions), **not** open world. Each zone is a hand-built Unity scene; zones connect via tunnels, elevators, and rail.
-- **Size:** MVP 4 zones, each ~5–15 minutes to traverse. 1.0: ~15 zones across 3 layers.
-- **Connectivity:** a graph. Each zone has named **exits**; each exit can be open/blocked depending on world facts (bridge destroyed → Span east exit blocked; Old Shaft bypass opens).
-- **Loading:** zone transitions are **diegetic loading moments** (elevator ride, long tunnel, rail car). Load the next scene, unload the previous. No seamless streaming — it's a huge complexity jump with little gameplay value in a cave world where tunnels naturally hide transitions.
+- **Structure (locked, D-005): connected areas** (think Metro Exodus / Dishonored / Metroid-style regions), **not** open world. Each area is a hand-built Unity scene; areas connect via tunnels, elevators, and rail.
+- **Size:** MVP ~4 areas, each ~5–15 minutes to traverse. 1.0: ~15 areas across 3 layers. A small world with strong systemic reactions beats a big world with shallow interaction (D-011).
+- **Connectivity:** a graph. Each area has named **exits**; each exit can be open/blocked depending on world facts (bridge destroyed → Span east exit blocked; Old Shaft bypass opens).
+- **Loading:** area transitions are **diegetic loading moments** (elevator ride, long tunnel, rail car). Load the next scene, unload the previous. No seamless streaming — it's a huge complexity jump with little gameplay value in a cave world where tunnels naturally hide transitions.
 - **Depth = danger:** each layer deeper adds stranger enemies, fewer friendly factions, harsher hazards. Gates between layers are story/world-state gates.
 
-### What persists when the player leaves a zone
+### What persists when the player leaves an area
 | Persists (saved) | Resets / simulated away |
 |---|---|
 | Level 2–4 destruction (gameplay objects, structures, major events) | Level 1 small debris, loose props, bodies |
-| Dead **named/important** NPCs | Generic enemies (respawn based on zone state rules) |
+| Dead **named/important** NPCs | Generic enemies (respawn based on area state rules) |
 | Looted containers, opened doors, discovered locations | Projectiles, particles, physics positions of most props |
 | World facts & faction state | Ambient NPC positions |
 
 ### How we avoid simulating the whole civilization
-Only the **current zone** runs real physics, AI, and NPCs. Everything else exists only as **data** (world facts, faction numbers, node states). When the player arrives somewhere, the zone **reads the data and configures itself** to match. The world "moves on" only at defined moments (zone transitions, resting, mission completion). This is the same approach used by Fallout/Elder Scrolls cells and most immersive sims.
+Only the **current area** runs real physics, AI, and NPCs. Everything else exists only as **data** (world facts, faction numbers, node states). When the player arrives somewhere, the area **reads the data and configures itself** to match. The world "moves on" only at world ticks (area transitions, resting, mission completion). This is the same approach used by Fallout/Elder Scrolls cells and most immersive sims.
 
-## 6. Destruction system
+## 7. Destruction system
+
+**Locked (D-006): practical authored / pre-fractured destruction, and it must be gameplay-relevant.** The MVP's two major destruction systems are the **Bridge** (The Span) and the **Water Pump** (Pumpworks). We do **not** attempt runtime-fracturing buildings, fully destructible environments, or destruction of everything.
 
 ### Destruction levels
 | Level | What | Technique | Persisted? | MVP? |
@@ -214,7 +265,7 @@ Only the **current zone** runs real physics, AI, and NPCs. Everything else exist
 ### Not in MVP
 Runtime cutting, voxel terrain, digging anywhere, destructible every-building, fluids simulation (flooding is a rising animated water plane, not a fluid sim).
 
-## 7. Consequence system — "Your choices become the enemy"
+## 8. Consequence system — "Your choices become the enemy"
 
 ### Architecture
 
@@ -222,12 +273,12 @@ Runtime cutting, voxel terrain, digging anywhere, destructible every-building, f
 Player action (break bridge, kill leader, help miners)
       │
       ▼
-GameEvent  { type: "StructureDestroyed", id: "span_bridge", zone, time, causedByPlayer }
+GameEvent  { type: "StructureDestroyed", id: "span_bridge", area, day, causedByPlayer }
       │
       ▼
 WorldState.SetFact("span_bridge.state", "destroyed")   + append to EventLog
       │
-      ▼  (at world tick: zone transition / rest / mission end)
+      ▼  (at world tick: area transition / rest / mission end)
 RuleEngine evaluates ConsequenceRules (data assets)
       │
       ├──► Faction changes   (Concord rep −30, Delvers rep +10)
@@ -237,17 +288,22 @@ RuleEngine evaluates ConsequenceRules (data assets)
       └──► New facts          ("concord.hunting_player" = true)
       │
       ▼
-When a zone loads, components READ facts and configure the scene:
+When an area loads, components READ facts and configure the scene:
   StateGate (show/hide objects), RouteGate (exits & NavMeshLinks),
   SpawnSet (which enemies/NPCs), Barks (what NPCs say), Vendor stock
 ```
 
 ### What is a meaningful event?
-An event is meaningful if **at least one rule or piece of content reacts to it.** Concretely, only **tagged** objects/NPCs emit persistent events: L2+ destruction with an ID, named NPC deaths, mission outcomes, infrastructure node state changes, faction-relevant crimes (witnessed). Breaking a bottle is not an event.
+An event is meaningful if **at least one rule or piece of content reacts to it.** Concretely, only **tagged** objects/NPCs emit persistent events: L2+ destruction with an ID, named NPC deaths, mission outcomes, infrastructure node state changes, attacks on faction members. Breaking a bottle is not an event.
 
 ### How events/facts are stored
 - **Facts:** a flat dictionary `string → value` (bool/int/float/string). E.g. `span_bridge.state = "destroyed"`, `faction.concord.rep = -20`, `pump.output = 0`, `npc.foreman_hale.dead = true`. Simple to save, debug, and query.
 - **Event log:** an append-only list of what happened (type, id, day). Used for NPC dialogue ("You're the one who dropped the Span") and for history/journal. Capped/summarized so it doesn't grow forever.
+
+### When consequences happen (MVP default — see open items)
+- **Immediate consequences** (route blocked, rep change, new facts) resolve at the **next world tick** — usually the next area transition — so the player sees a reaction soon after acting.
+- **Delayed consequences** ("price spike in 1 day", "Crisis 2 days later") are scheduled in **days**. The day counter advances when the player **rests** or **completes a mission**.
+- **Blame:** in the MVP the player is **always** blamed for major (L4) destruction they cause. A witness/evidence system is deferred to 1.0 — it adds complexity and makes consequences less reliable to test.
 
 ### How consequences are triggered
 **Data-driven rules** (ScriptableObjects), not code per consequence:
@@ -272,9 +328,9 @@ Rule: "Bridge loss hurts trade"
 This gives a dynamic feel from **combinations of a few simple systems**, which is how emergent games actually work.
 
 ### Example: destroy the Pump
-Pump → Destroyed ⇒ `water` supply to Market drops ⇒ Market condition → Strained (next tick) → Crisis (2 ticks later) ⇒ Content reacting to *Market: Crisis*: ration lines, higher prices, Concord patrols increase, Hollowers raid water caravans (new enemy spawn set), mission template "Repair the Pump" or "Escort water" appears, refugees move to Old Shaft (SpawnSet change there), NPC barks blame "the saboteur". Concord rep drops only if the player was **seen** or evidence links them.
+Pump → Destroyed ⇒ `water` supply to Market drops ⇒ Market condition → Strained (next tick) → Crisis (2 days later) ⇒ Content reacting to *Market: Crisis*: ration lines, higher prices, Concord patrols increase, Hollowers raid water caravans (new enemy spawn set), mission template "Repair the Pump" or "Escort water" appears, refugees move to Old Shaft (SpawnSet change there), NPC barks blame "the saboteur", Hollowers take control of Pumpworks (`area.pumpworks.controller = hollowers`). Concord rep drops (MVP: player always blamed for L4 destruction).
 
-## 8. Faction system
+## 9. Faction system
 
 | Element | MVP | 1.0 | Later |
 |---|---|---|---|
@@ -282,11 +338,13 @@ Pump → Destroyed ⇒ `water` supply to Market drops ⇒ Market condition → S
 | Faction values (what each faction cares about → automatic rep reactions) | ✅ | ✅ | |
 | Faction ↔ faction relationships | ✅ fixed table | ✅ changes via events | |
 | Resources (abstract numbers: water, trade, ore, scrap) | ✅ via nodes | ✅ | Economy sim |
-| Territory (zone owner) | ❌ | ✅ | Dynamic wars |
+| Territory | ✅ area-control fact (`area.<id>.controller`), changed by rules | ✅ more contested areas, faction territory goals | Dynamic wars |
 | Goals (faction "wants" that generate missions) | ❌ hand-authored missions | ✅ simple goal list | Planning AI |
 | Alliances/conflicts that shift | ❌ | ✅ rule-driven | |
 
-Proposed factions (MVP in **bold**):
+**Locked (D-008): three MVP factions** — Concord, Delvers' Union, Hollowers. Additional major factions need a new decision entry.
+
+Factions (MVP in **bold**; *italic* = future candidates, not committed):
 - **The Concord** — city authority; controls water and trade. Values: order, infrastructure.
 - **Delvers' Union** — miners; exploited by the Concord. Values: workers, mines; hates Concord taxes.
 - **The Hollowers** — scavengers living in abandoned works; thrive on collapse. Values: salvage; *benefit* when infrastructure fails (great for "your choices become the enemy" — your destruction makes them stronger).
@@ -296,7 +354,19 @@ Proposed factions (MVP in **bold**):
 
 Why these: each faction has a clear relationship to **infrastructure**, which is what the player destroys or protects. That makes faction reactions follow naturally from the core mechanic.
 
-## 9. NPC system
+### How each MVP faction connects to the systems (proposed — tune during P4/Phase 4)
+
+| | The Concord | Delvers' Union | The Hollowers |
+|---|---|---|---|
+| **Infrastructure** | Maintains the Bridge and the Pump; damage hurts them most | Depend on the Bridge to move ore out of the Old Shaft | Profit when infrastructure fails (salvage); may hire the player to sabotage |
+| **Resources** | Water and trade (controls distribution and prices) | Ore (sold to the Market over the Bridge) | Scrap (gained from any destruction) |
+| **Territory (MVP)** | Controls Concord Market and Pumpworks | Controls the Old Shaft | Holds derelict corners of The Span; can **take over a failed area** (e.g., Pumpworks after the Pump is destroyed) |
+| **Reacts to player actions** | Punishes infrastructure damage; rewards repairs and defense | Rewards help with mine safety and resisting Concord control; angered by losing the Bridge too | Rewards sabotage and salvage; angered by attacks on scavengers or rebuilding |
+| **Default relationship** | Rival of the Union (taxes), hostile to Hollowers | Rival of the Concord, wary of Hollowers | Hostile to the Concord, opportunistic toward the Union |
+
+This creates real dilemmas: destroying the Bridge hurts **both** the Concord and the Union while strengthening the Hollowers; destroying the Pump hurts everyone in the Market, including Union families.
+
+## 10. NPC system
 
 **Tiered NPCs** — sophistication only where players notice it:
 
@@ -311,7 +381,7 @@ Why these: each faction has a clear relationship to **infrastructure**, which is
 - **Fear/reaction to destruction:** a simple **"disturbance" event** (explosions, collapses broadcast a radius); T0/T1 NPCs in range flee or go alert. Cheap and very effective.
 - **Combat AI:** NavMesh + finite state machine. Where sophistication **is** valuable: **enemy awareness of the environment** — e.g., enemies avoid standing under cracked ceilings, take cover behind breakable cover (and get exposed when it breaks), use alternate routes when bridges fall. That's where AI reinforces the core idea.
 
-## 10. Combat
+## 11. Combat
 
 Design goal: **the room is your weapon.** Interesting interactions over bigger health bars.
 
@@ -334,35 +404,35 @@ Enemy types (each designed to *demand* a physics answer):
 
 Avoid: damage-sponge enemies, too many weapon types, a complex combo system.
 
-## 11. World simulation: continuous vs event-driven
+## 12. World simulation: continuous vs event-driven
 
-**Recommendation: event-driven abstraction.** Only the loaded zone is simulated in real time.
+**Locked (D-007): event-driven, state-based simulation.** Only the loaded area is simulated in real time. Systems are only evaluated when meaningful gameplay events require it.
 
 | System | Approach |
 |---|---|
-| NPCs off-screen | Not simulated. Spawn sets chosen from state on zone load. |
+| NPCs off-screen | Not simulated. Spawn sets chosen from state on area load. |
 | Factions | Numbers updated by rules at world ticks. |
 | Economy | Not simulated. Per-settlement resource supply levels from node states. |
 | Resources | Node output → settlement supply, recalculated at ticks. |
 | Population | Settlement Condition band (Stable/Strained/Crisis/Abandoned). |
 | Infrastructure | Node state machine (Intact/Damaged/Destroyed), changed by events or repair missions. |
-| Territory (1.0) | Zone owner fact changed by rules. |
+| Territory | Area-control fact changed by rules (MVP); contested territory in 1.0. |
 
-**World tick** = whenever time passes meaningfully: zone transition, resting, mission completion. The tick: process events since last tick → run rules → advance scheduled events → recalc settlement conditions. Deterministic, testable, cheap, savable. Continuous simulation would be expensive, hard to debug, and mostly invisible to the player.
+**World tick** = whenever time passes meaningfully: area transition, resting, mission completion. The tick: process events since last tick → run rules → advance scheduled events → recalc settlement conditions. Deterministic, testable, cheap, savable. Continuous simulation would be expensive, hard to debug, and mostly invisible to the player.
 
-## 12. Save system
+## 13. Save system
 
 - **Philosophy:** the scene file is the **baseline**; the save file stores only the **differences** (deltas) from that baseline. That keeps saves tiny.
-- **Stable IDs:** every persistent object (L2+ destructible, door, container, named NPC) has a `PersistentId` component holding a unique string ID, assigned in the editor. **This must exist from Phase 1** — retrofitting IDs later is painful.
+- **Stable IDs:** every persistent object (L2+ destructible, door, container, named NPC) has a `PersistentId` component holding a unique string ID, assigned in the editor. **Introduced in prototype P2, before the first persistent destructible is placed** — retrofitting IDs later is painful.
 - **Save file (JSON):**
 ```json
 {
   "version": 1,
   "day": 4,
-  "currentZone": "concord_market",
+  "currentArea": "concord_market",
   "player": { "position": [..], "health": 80, "inventory": [..] },
   "facts": { "span_bridge.state": "destroyed", "faction.concord.rep": -20 },
-  "zones": {
+  "areas": {
     "the_span": { "destroyed": ["wall_03", "strut_a"], "opened": ["gate_1"], "looted": ["crate_7"] }
   },
   "deadNpcs": ["foreman_hale"],
@@ -372,12 +442,12 @@ Avoid: damage-sponge enemies, too many weapon types, a complex combo system.
   "discovered": ["old_shaft"]
 }
 ```
-- **When to save (MVP):** autosave at zone transitions and checkpoints only — never mid-collapse. Avoids saving moving physics state (hard and buggy).
+- **When to save (MVP):** autosave at area transitions and checkpoints only — never mid-collapse. Avoids saving moving physics state (hard and buggy).
 - **Loading:** load scene → `PersistentId` objects look themselves up in the save → destroyed ones swap to rubble state, opened doors open, dead NPCs don't spawn → StateGates read facts.
 - **Versioning:** `version` field + a small migration step so old saves don't break as the game evolves.
 - **Size:** kilobytes, even for long games.
 
-## 13. Performance — risks & mitigations
+## 14. Performance — risks & mitigations
 
 | Problem | Mitigation |
 |---|---|
@@ -385,7 +455,7 @@ Avoid: damage-sponge enemies, too many weapon types, a complex combo system.
 | Destruction spikes (100 pieces spawning at once) | Pre-instantiate fractured pieces disabled; object pooling for common debris; keep piece counts low (10–30 per object) |
 | AI cost | Few active enemies per encounter (≤8–10); FSM not heavy planning; AI updates staggered; disable AI far from player |
 | NavMesh after destruction | Don't rebuild NavMesh at runtime; use **NavMeshLinks/obstacles toggled by state** for authored changes |
-| Large environments | Zone-based scenes; occlusion culling (caves are ideal for it); LODs; static batching |
+| Large environments | Area-based scenes; occlusion culling (caves are ideal for it); LODs; static batching |
 | Lighting in dark caves | Baked/mixed lighting + few realtime lights; Adaptive Probe Volumes (Unity 6) for dynamic objects; accept that destroyed areas use realtime local lights |
 | Persistent objects | Only IDs + states stored; no per-object physics state |
 | Save files | Deltas only; save at transitions |
@@ -394,31 +464,35 @@ Avoid: damage-sponge enemies, too many weapon types, a complex combo system.
 
 **Rule:** profile early and every phase. Set a target (e.g., 60 FPS on a mid-range PC) and a "debris budget" per encounter.
 
-## 14. Project architecture
+## 15. Project architecture
 
-Keep it small, flat, and readable. **One rule:** game logic (rules, facts, factions, save data) lives in **plain C# classes** that don't depend on Unity scenes, so it can be unit-tested. MonoBehaviours are thin wrappers that connect it to the game world.
+Keep it small, flat, and readable. The folder tree below is the **target**; folders are created only when their first file exists (D-013). **One rule:** game logic (rules, facts, factions, save data) lives in **plain C# classes** that don't depend on Unity scenes, so it can be unit-tested. MonoBehaviours are thin wrappers that connect it to the game world.
 
 ```
-Assets/_Project/
-  Scripts/
+Assets/_Project/          (our content; underscore keeps it first and separate from imported assets)
+  Scripts/                (+ one runtime assembly definition)
     Core/          GameManager, GameEvents (simple event hub), WorldClock
     Player/        PlayerController, PlayerLook, GrabTool, PlayerHealth
     Combat/        Health, Damage, Weapon, Explosion, Knockback
     Destruction/   Destructible, FracturedSwap, SupportLink, DebrisManager
-    World/         ZoneLoader, ZoneExit, StateGate, RouteGate, SpawnSet
+    World/         AreaLoader, AreaExit, StateGate, RouteGate, SpawnSet
     State/         WorldState (facts), EventLog, ConsequenceRule, RuleEngine
     Factions/      FactionDefinition, FactionState, Reputation
     NPC/           NpcBrain (FSM), Barks, Disturbance
     Save/          PersistentId, SaveData, SaveSystem
     UI/            HUD, Journal, DebugOverlay
   Data/            ScriptableObject assets: factions, rules, nodes, missions, barks
-  Scenes/          Boot, Zone_ConcordMarket, Zone_TheSpan, ...  Prototypes/
-  Art/  Audio/  Prefabs/
-  Tests/EditMode/  WorldState, RuleEngine, SaveSystem, Reputation tests
+  Scenes/          Boot, Area_ConcordMarket, Area_TheSpan, ...  Prototypes/ (Phase 1)
+  Prefabs/  Materials/  Models/  Audio/
+  Tests/EditMode/  WorldState, RuleEngine, SaveSystem, Reputation tests (+ test assembly definition)
+ArtSource/         Blender .blend sources (outside Assets so Unity doesn't import them; Git LFS)
+Packages/  ProjectSettings/   (Unity-generated, committed)
 docs/
-  DESIGN.md  TECH.md  ROADMAP.md  DECISIONS.md (why we chose things)  TESTING.md
-CLAUDE.md          (project rules for Claude Code)
+  DESIGN.md  ROADMAP.md  DECISIONS.md
+README.md  CLAUDE.md  .gitignore  .gitattributes
 ```
+
+The two assembly definitions (one for game code, one for EditMode tests) are the only "extra" structure: Unity tests can't reference game code without them.
 
 **Dependency direction (simple):**
 ```
@@ -432,11 +506,11 @@ Player / Combat / Destruction / NPC / World   (scene stuff)
 ```
 - **Event system:** one small `GameEvents` class with C# events (e.g., `OnStructureDestroyed`). No third-party event frameworks.
 - **Avoid:** dependency-injection frameworks, ECS/DOTS, deep inheritance hierarchies, "manager of managers". Unity singletons used sparingly and only for true globals (WorldState, SaveSystem).
-- **Testing strategy:** EditMode unit tests for all pure logic (facts, rules, reputation, save round-trip, migration). Manual **test checklists** per milestone for feel/physics (written in `docs/TESTING.md`). A **debug overlay** (toggle key) showing current facts, rep, node states — essential for verifying consequences. Dev cheats: "destroy bridge", "advance day", "set rep".
+- **Testing strategy:** EditMode unit tests for all pure logic (facts, rules, reputation, save round-trip, migration). Manual **test checklists** per milestone for feel/physics (in ROADMAP.md; moved to a `docs/TESTING.md` only if they outgrow it). A **debug overlay** (toggle key) showing current facts, rep, node states — essential for verifying consequences. Dev cheats: "destroy bridge", "advance day", "set rep".
 
-> Prototype plan and development roadmap (sections 15–16) live in [ROADMAP.md](ROADMAP.md).
+> The prototype plan and development roadmap live in [ROADMAP.md](ROADMAP.md).
 
-## 17. Claude Code workflow
+## 16. Claude Code workflow
 
 **Roles:** you = director/product owner; Claude = senior engineer, technical director, mentor.
 
@@ -448,9 +522,15 @@ Player / Combat / Destruction / NPC / World   (scene stuff)
 5. **Claude gives you editor steps** for anything requiring the Unity Editor (scene setup, prefabs, components), numbered and short.
 6. **You playtest** using the milestone's checklist; Claude runs EditMode tests where possible.
 7. **Review together:** Claude summarizes the diff and what to watch for.
-8. **Commit** with a clear message; update `docs/` (ROADMAP progress, DECISIONS, TESTING checklist).
+8. **Commit** with a clear message; update `docs/` (ROADMAP progress, DECISIONS).
 
-**Ground rules (to put in `CLAUDE.md`):**
+**Git workflow (D-012):**
+```
+main  ──►  feature branch (one per milestone, e.g. P1)  ──►  pull request  ──►  review  ──►  merge into main
+```
+`main` only receives reviewed work. Nothing is force-pushed or deleted without an explicit warning first.
+
+**Ground rules (kept in `CLAUDE.md`):**
 - Small milestones; never more than a few files changed at once without explanation.
 - Never silently rewrite a working system; propose changes first.
 - Flag technical risk explicitly.
@@ -460,31 +540,26 @@ Player / Combat / Destruction / NPC / World   (scene stuff)
 - Keep `docs/DECISIONS.md` updated with "what we chose and why."
 - Claude can't see the editor or run the game — so you report what you see (screenshots/console errors help a lot).
 
-**Learning track alongside development:** each phase introduces a few concepts (Phase 1: components, Update vs FixedUpdate, Rigidbody; Phase 4: serialization, IDs; Phase 5: data-driven design, events). Claude explains them in context when they first appear.
+**Learning track alongside development:** each step introduces a few concepts (P1: components, Update vs FixedUpdate, Rigidbody; P3: serialization, IDs; P4: data-driven design, events). Claude explains them in context when they first appear.
 
 ---
 
-## Summary (the 12 requested items)
+## Summary
 
-1. **Recommended engine:** Unity 6 LTS (URP).
+1. **Engine:** Unity 6 LTS + URP, C# (locked).
 2. **Tech stack:** Unity 6 + URP, C#, AI Navigation package, Input System, Newtonsoft JSON (Unity package), ScriptableObjects, Unity Test Framework, Blender (Cell Fracture), Git + LFS, VS Code. No paid plugins.
-3. **MVP:** 4-zone Upper Works district, 3 factions, 2 infrastructure nodes (Bridge, Pump) with full consequence chains, physics combat with grab/throw/kick/explosives, 3–4 enemy types, checkpoint save/load. First-person, single-player.
-4. **Core loop:** Enter zone → read the stakes → choose approach → physics combat/destruction → outcome becomes world facts → world tick on leaving/resting → return to a changed world → go deeper.
-5. **Major systems:** Player & GrabTool, Combat, Destruction (tiered L1–L4), Zones & Gates, WorldState + EventLog, RuleEngine (consequences), Infrastructure nodes & settlement conditions, Factions, Tiered NPCs, Save (delta-based), Debug overlay.
+3. **MVP:** one district (Upper Works) of ~4 connected areas, 3 factions, 2 infrastructure nodes (Bridge, Pump) with full consequence chains, physics interaction and basic combat, faction and NPC reactions, mission consequences, save/load. First-person, single-player.
+4. **Core loop:** Enter area → read the stakes → choose approach → physics combat/destruction → outcome becomes world facts → world tick → return to a changed district (→ go deeper in 1.0).
+5. **Major systems:** Player & GrabTool, Combat, Destruction (tiered L1–L4), Areas & Gates, WorldState + EventLog, RuleEngine (consequences), Infrastructure nodes & settlement conditions, Factions, Tiered NPCs, Save (delta-based), Debug overlay.
 6. **Hardest technical problems:** reliable persistence of destruction (stable IDs); destruction performance; AI navigation through changed geometry; lighting after destruction; making consequences *visible* and readable; keeping content scope under control.
-7. **Prototype plan:** P1 Physics combat sandbox → P2 Destruction & collapse → P3 Persistence → P4 Consequence chain → P5 AI vs changed world.
-8. **Roadmap:** Phase 0 Setup → 1 Player & physics feel → 2 Combat & enemies → 3 Destruction → 4 Persistence & zones → 5 Consequences & factions → 6 MVP content → 7 Polish → 8+ toward 1.0.
-9. **Architecture:** flat `Scripts/` folders by system; pure-C# logic core (WorldState, RuleEngine, Factions, SaveData) with thin MonoBehaviour wrappers; one simple `GameEvents` hub; ScriptableObject data; EditMode tests; `docs/` + `CLAUDE.md`.
-10. **Biggest risks:** scope creep (#1); physics combat not being fun; consequences feeling invisible; destruction performance; beginner learning curve in Unity editor; content production time.
-11. **Do NOT build yet:** multiplayer; open world / seamless streaming; procedural world generation; runtime/voxel fracture; destroy-anything buildings; fluid simulation; continuous economy/population sim; NPC daily schedules and per-NPC memory; AI/LLM-generated dialogue; vehicles; territory warfare; crafting, skill trees, inventory depth; third-person animation; deeper layers (forest/ocean/the Deep); voice acting; paid plugins.
-12. **Build first:** **Phase 0 setup, then Prototype P1** — a grey-box room with a first-person controller, grab/throw/kick, an explosive barrel, a breakable crate, and two simple enemies. It teaches you Unity fundamentals and answers the most important question: *is throwing the world at enemies fun?*
+7. **Prototype plan:** P1 Physics → P2 Destruction → P3 Persistence → P4 Consequences → P5 AI, each small and timeboxed (see ROADMAP.md).
+8. **Roadmap:** Phase 0 Setup → 1 Prototypes P1–P5 + gate review → 2 Core gameplay → 3 Persistent world → 4 Consequences, factions & NPC reactions → 5 MVP content → 6 Polish & release → 7+ toward 1.0.
+9. **Architecture:** flat `Scripts/` folders by system; pure-C# logic core (WorldState, RuleEngine, Factions, SaveData) with thin MonoBehaviour wrappers; one simple `GameEvents` hub; ScriptableObject data; EditMode tests.
+10. **Biggest risks:** scope creep (#1); consequences feeling invisible; physics interaction not being fun; destruction performance; beginner learning curve in the Unity Editor; content production time.
+11. **Do NOT build yet:** multiplayer; open world / seamless streaming; procedural world generation; runtime/voxel fracture; destroy-anything buildings; fluid simulation; continuous economy/population sim; NPC daily schedules and per-NPC memory; witness/evidence system; AI/LLM-generated dialogue; vehicles; territory warfare; crafting, skill trees, inventory depth; third-person animation; deeper layers (forest/ocean/the Deep); voice acting; paid plugins.
+12. **Build first:** Phase 0 setup, then a deliberately small P1.
 
-## Open questions for your review
-- First-person OK for the MVP? (A2)
-- Stylized/low-poly art direction OK? (A3)
-- Faction concepts (Concord / Delvers' Union / Hollowers) — keep, rename, or rethink?
-- Where should the Unity project live — this repo (`ClaudeTesting`) or a new dedicated repo?
-- After approval, I'd save this plan into the repo as `docs/DESIGN.md` + `docs/ROADMAP.md` as the first commit (no code).
-
-## Verification (for this planning phase)
-No code exists yet. The plan is "verified" by your review. Each later phase has its own test steps and definition of done above; prototypes P1–P5 are the real verification that the design is technically sound.
+## Open items (defaults written above; confirm or change)
+- **How time passes:** day advances on rest or mission completion; immediate consequences at the next area transition (§8).
+- **Blame:** player always blamed for L4 destruction they cause; witnesses deferred to 1.0 (§8).
+- **Faction × systems table** (§9) is a proposal to tune during P4/Phase 4.
