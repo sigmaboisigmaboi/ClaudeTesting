@@ -42,6 +42,13 @@ namespace TheDeep.Player
         Collider[] heldColliders;
         bool heldBodyUsedGravity;
 
+        // The object currently in the player's hands, if any. Destructibles ignore impacts
+        // from it: carried objects don't deal destruction damage, only pushed/thrown ones (P2).
+        public static Rigidbody CurrentlyHeld { get; private set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetForNewPlaySession() => CurrentlyHeld = null;
+
         void Awake()
         {
             controller = GetComponent<CharacterController>();
@@ -101,6 +108,7 @@ namespace TheDeep.Player
                 return;
 
             heldBody = body;
+            CurrentlyHeld = body;
             heldColliders = body.GetComponentsInChildren<Collider>();
             heldBodyUsedGravity = body.useGravity;
 
@@ -129,6 +137,7 @@ namespace TheDeep.Player
             body.useGravity = heldBodyUsedGravity;
 
             heldBody = null;
+            CurrentlyHeld = null;
             heldColliders = null;
             return body;
         }

@@ -19,15 +19,6 @@ namespace TheDeep.World
 
         Rigidbody body;
 
-        // Impact strength = incoming mass (kg) × impact speed (m/s), i.e. the incoming object's momentum.
-        // Doubling either the mass or the speed doubles the strength. Invalid input gives 0.
-        public static float CalculateStrength(float mass, float speed)
-        {
-            if (float.IsNaN(mass) || float.IsNaN(speed) || mass <= 0f || speed <= 0f)
-                return 0f;
-            return mass * speed;
-        }
-
         void Awake()
         {
             body = GetComponent<Rigidbody>();
@@ -44,7 +35,7 @@ namespace TheDeep.World
             // of contact, before the collision is resolved — more reliable than reading the
             // other object's velocity afterwards.
             float speed = collision.relativeVelocity.magnitude;
-            float strength = CalculateStrength(other.mass, speed);
+            float strength = ImpactMath.Strength(other.mass, speed);
             if (strength < minimumStrength)
                 return;
 

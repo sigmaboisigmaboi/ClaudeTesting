@@ -14,7 +14,7 @@ Each phase is broken into small milestones (one to a few sessions each), built o
 |---|---|
 | Planning, locked decisions, repo setup | ✅ Done |
 | Phase 0 — Setup | ✅ Done (Unity 6000.3.25f1, folders, EditMode sanity test, Bootstrap scene) |
-| Phase 1 — Prototypes P1–P5 | 🔧 In progress — P1.1 ✅ done (first-person movement/look, play-tested in Unity 2026-10-04); P1.2 ✅ done (pushable physics objects, play-tested in Unity 2026-10-04); P3.1 ✅ done (persistence spike, pulled forward; play-tested in Unity 2026-10-04); P1.3 ✅ done (grab, hold, drop and throw; play-tested in Unity 2026-10-04); P1.4 ✅ done (knockback dummy, play-tested in Unity 2026-10-04). **P1 complete.** Next: P2 destruction vertical slice (approved, not started) |
+| Phase 1 — Prototypes P1–P5 | 🔧 In progress — P1.1 ✅ done (first-person movement/look, play-tested in Unity 2026-10-04); P1.2 ✅ done (pushable physics objects, play-tested in Unity 2026-10-04); P3.1 ✅ done (persistence spike, pulled forward; play-tested in Unity 2026-10-04); P1.3 ✅ done (grab, hold, drop and throw; play-tested in Unity 2026-10-04); P1.4 ✅ done (knockback dummy, play-tested in Unity 2026-10-04). **P1 complete.** 🔧 P2 — Destruction Vertical Slice implemented, awaiting Unity play-test |
 | Phases 2–6 | — |
 
 ---
@@ -54,6 +54,8 @@ Grey-box only. P1 uses the existing Bootstrap test room; later prototypes may ge
 - **Test:** blow up everything in the room — frame rate stays at target; collapses behave predictably; no pieces flying off from overlapping colliders.
 - **What could go wrong:** the fracture/export workflow is too slow to author → fewer, bigger pieces; physics spikes → pre-instantiate pieces, limit counts.
 - **Done:** wall, catwalk, and bridge all break reliably within the debris budget; workflow written down.
+- **Progress:**
+  - 🔧 **P2 — Destruction Vertical Slice** (approved as one large milestone): built in new scenes `Scenes/Prototypes/P2_Span` and `P2_Annex`; Bootstrap untouched. Thrown/pushed crates damage destructible infrastructure (`Destructible`: integrity, intact → pre-placed cube-chunk pieces → static rubble); a breakable alcove wall, two support posts, and a bridge deck that collapses when both posts are gone (records `p2span.bridge_destroyed`). Debris freezes in place after settling, under a 40-piece budget. Destroyed `PersistentId`s are saved in `WorldState` v2 through one shared `WorldSession`; leaving to the Annex and returning, stopping/restarting Play, or restarting Unity shows the world still destroyed. Dev reset via the `_Dev` object's Delete Saved World State. Held crates deal no damage. Cube-chunk fracture stands in for the Blender pipeline (an optional later content step). Implemented, awaiting Unity play-test.
 
 ### P3 — Persistence (1–2 weeks)
 - **Question:** *Do stable IDs + delta saves reliably remember destruction?*
@@ -62,6 +64,7 @@ Grey-box only. P1 uses the existing Bootstrap test room; later prototypes may ge
 - **Test:** EditMode tests for facts and save round-trip; manual: destroy → leave → return → save → quit → load, repeated many times.
 - **What could go wrong:** duplicate/missing IDs; load-order bugs (objects reading state before it's loaded).
 - **Done:** 100% reliable across 20 manual round-trips; tests green.
+- **Pulled into P2:** `PersistentId`, the shared `WorldSession`, `WorldState` v2 (destroyed ids), and a minimal area transition (`AreaExit`/`AreaSpawnPoint`, P2_Span ↔ P2_Annex). P3 proper still owns save timing (transitions/checkpoints vs. immediate), save-format versioning beyond v2, and the 20-round-trip reliability bar.
 - **Progress:**
   - ✅ **P3.1 — Persistence Spike (pulled forward)** (2026-10-04): done early, before P1's remaining items and P2, to test the core identity ("I changed something, and the world remembers") as soon as possible. One remembered fact, `bootstrap.crate_on_pad`: pushing `Crate_Medium` onto the corner pad records it, `WorldState` saves it as JSON immediately, and on the next start the crate is placed on the pad (authored "after" state). No `PersistentId`, second scene, or save system yet — those remain P3 proper (D-017). Play-tested in Unity 6000.3.25f1: the fact was recorded and saved; the crate returned to the pad after stop/Play, after being pushed off, and after a full Unity restart; Delete Saved World State reset it to its original authored position; all EditMode tests passed.
 

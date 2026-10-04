@@ -36,6 +36,47 @@ namespace TheDeep.Tests.EditMode
             WorldState state = WorldState.FromJson(json);
 
             Assert.AreEqual(0, state.FactCount);
+            Assert.AreEqual(0, state.DestroyedCount);
+        }
+
+        [Test]
+        public void MarkDestroyed_RecordsId_OnceOnly()
+        {
+            var state = new WorldState();
+
+            state.MarkDestroyed("p2span.wall_alcove");
+            state.MarkDestroyed("p2span.wall_alcove");
+
+            Assert.IsTrue(state.IsDestroyed("p2span.wall_alcove"));
+            Assert.IsFalse(state.IsDestroyed("p2span.pillar_left"));
+            Assert.AreEqual(1, state.DestroyedCount);
+        }
+
+        [Test]
+        public void ToJson_ThenFromJson_KeepsFactsAndDestroyedIds()
+        {
+            var original = new WorldState();
+            original.Set("p2span.bridge_destroyed");
+            original.MarkDestroyed("p2span.bridge_deck");
+
+            WorldState loaded = WorldState.FromJson(original.ToJson());
+
+            Assert.IsTrue(loaded.Has("p2span.bridge_destroyed"));
+            Assert.IsTrue(loaded.IsDestroyed("p2span.bridge_deck"));
+            Assert.AreEqual(WorldState.CurrentVersion, loaded.Version);
+        }
+
+        [Test]
+        public void FromJson_Version1File_KeepsFactsAndStartsWithNoDestroyedIds()
+        {
+            // Exactly what P3.1 (WorldState version 1) wrote to disk.
+            const string version1Json = "{\"version\":1,\"facts\":[\"bootstrap.crate_on_pad\"]}";
+
+            WorldState loaded = WorldState.FromJson(version1Json);
+
+            Assert.IsTrue(loaded.Has("bootstrap.crate_on_pad"));
+            Assert.AreEqual(0, loaded.DestroyedCount);
+            Assert.AreEqual(WorldState.CurrentVersion, loaded.Version);
         }
     }
 }
