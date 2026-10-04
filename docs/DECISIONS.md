@@ -234,3 +234,30 @@ Template:
 - **Alternatives considered:** Loading screens or additive scene streaming; only testing via stop/Play.
 - **Why rejected:** Streaming/loading screens are beyond a prototype (D-005 keeps transitions simple); stop/Play doesn't exercise in-session unload/reload.
 - **Consequences / tradeoffs:** A full scene load per transition (fine for small areas). Each scene has its own Player copy; there is no carried-over player state yet (held objects stay behind).
+
+## D-024 — Consequences run on every world change and on area load
+- **Status:** Locked
+- **Date:** 2026-10-04
+- **Decision:** After changing the world state, code calls `WorldSession.Commit()`: it applies the consequence rules, saves once, and raises `WorldSession.Changed`. Each area scene has a `ConsequenceRunner` (runs before other scripts) that registers that scene's `ConsequenceRulebook` with the session and runs the rules once on load (the "world tick"); it saves and notifies only if a rule fired. `Destructible` now calls `Commit()` instead of `Save()`. Reactors subscribe to `Changed` so they update immediately, without a reload. `Changed` is cleared with the rest of the session at the start of each Play session.
+- **Reason:** Consequences should be visible as soon as possible ("I changed something, and the world reacts"), and also be correct after a load: a save written before a rule existed (e.g. a P2 save with the bridge already destroyed) still gets its consequences when an area loads.
+- **Alternatives considered:** Running rules only on area transitions (DESIGN's world tick); a general event bus; polling the state every frame.
+- **Why rejected:** Transition-only delays feedback in the same area, which this prototype is meant to test; an event bus is more infrastructure than one "state changed" event needs; polling wastes work and hides when things change.
+- **Consequences / tradeoffs:** Rules run synchronously in the frame of the change (fine for a handful of rules). Delayed consequences and a day counter remain future work (Phase 4). Code that changes state without calling `Commit()` (e.g. P3.1's `CrateTargetPad.Record`) saves but doesn't trigger rules or reactors. That's fine for Bootstrap, which has no rules.
+
+## D-025 — Consequence rules as data: StateCondition + ConsequenceRule in a rulebook asset, each firing once
+- **Status:** Locked
+- **Date:** 2026-10-04
+- **Decision:** A `StateCondition` (required facts, forbidden facts, required destroyed ids, reputation band ranges; all must hold; empty = always) is the one reusable check, used by rules and reactors alike. A `ConsequenceRule` has an id, a description, a condition, and effects (facts to set, reputation changes). Rules live in a `ConsequenceRulebook` ScriptableObject asset, edited in the Inspector. `ConsequenceEngine.Apply` (plain C#, unit-tested) fires every met rule that hasn't fired before, repeating until nothing new fires so rules can chain. Each fired rule is remembered as the fact `rule.<id>`, so it never fires twice, even across saves and reloads. EditMode tests check the rule logic and validate every rulebook asset (unique ids, non-empty conditions, at least one effect) and that every `ConsequenceRunner` has a rulebook.
+- **Reason:** DESIGN §10 calls for data-driven rules that content keys off. One shared condition type keeps authoring consistent. Fire-once avoids double reputation penalties every time an area loads.
+- **Alternatives considered:** Hard-coded consequence scripts per event; a scripting language or visual graph; storing "already fired" in a separate list.
+- **Why rejected:** Per-event scripts don't scale and hide the rules; a language or graph is far too much for a prototype; a fact is already persisted and visible in the debug log, so a separate list adds nothing.
+- **Consequences / tradeoffs:** Rule ids must stay stable once shipped, because saves remember them. Conditions only express AND. OR is done with multiple rules or entries. Rules can only add facts and change reputation; removing facts is not supported (facts stay one-way, D-017).
+
+## D-026 — Faction reputation in WorldState v3; reactors (StateGate, ConditionalText); capsule NPCs with text
+- **Status:** Locked (reactor display is prototype-scoped)
+- **Date:** 2026-10-04
+- **Decision:** `WorldState` v3 stores numeric reputation per faction (`Faction` enum: Concord, Delvers, Hollowers — D-008), clamped to −100..100, default 0. Version 1 and 2 files load with neutral reputation. Content checks **bands**, not numbers: Hostile ≤ −40, Unfriendly < −10, Neutral, Friendly ≥ 20 (`ReputationRules`). Two thin reactor components read the session: `StateGate` shows one set of objects when a condition is met and another when it isn't; `ConditionalText` shows the first entry whose condition is met as floating world-space text (barks within a distance, signs always), using Unity's built-in `TextMesh` created at runtime. NPCs in this slice are static capsules with a `ConditionalText`. There is no character art, dialogue, or AI.
+- **Reason:** Numeric reputation lets several events combine (e.g. Hollowers +20 for the bridge and −40 for the cache = −20, Unfriendly), while bands keep content simple (DESIGN §10). Generic reactors let one slice show route, NPC, trade, and mission changes without a system per feature. `TextMesh` needs no new package or asset import.
+- **Alternatives considered:** Reputation as facts in the fact list; per-feature components (vendor, job board, guard scripts); TextMeshPro or a UI canvas for text.
+- **Why rejected:** Facts are one-way strings, while reputation needs to add up; per-feature scripts multiply code for the same "if state, then show" pattern; TextMeshPro needs its essential resources imported and UI/HUD is out of scope for this slice.
+- **Consequences / tradeoffs:** Built-in `TextMesh` is low-fidelity and may draw through walls; it will be replaced when real UI or dialogue arrives, while the authored conditions and lines stay. Reputation has no decay or relationships between factions yet (Phase 4).
