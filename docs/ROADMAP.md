@@ -14,7 +14,7 @@ Each phase is broken into small milestones (one to a few sessions each), built o
 |---|---|
 | Planning, locked decisions, repo setup | ✅ Done |
 | Phase 0 — Setup | ✅ Done (Unity 6000.3.25f1, folders, EditMode sanity test, Bootstrap scene) |
-| Phase 1 — Prototypes P1–P5 | 🔧 In progress — P1.1 ✅ done (first-person movement/look, play-tested in Unity 2026-10-04); P1.2 ✅ done (pushable physics objects, play-tested in Unity 2026-10-04); P1 remaining physics items still open. P3.1 persistence spike (pulled forward) implemented, awaiting Unity play-test |
+| Phase 1 — Prototypes P1–P5 | 🔧 In progress — P1.1 ✅ done (first-person movement/look, play-tested in Unity 2026-10-04); P1.2 ✅ done (pushable physics objects, play-tested in Unity 2026-10-04); P1 remaining physics items still open. P3.1 ✅ done (persistence spike, pulled forward; play-tested in Unity 2026-10-04); next sub-step not started |
 | Phases 2–6 | — |
 
 ---
@@ -61,7 +61,7 @@ Grey-box only. P1 uses the existing Bootstrap test room; later prototypes may ge
 - **What could go wrong:** duplicate/missing IDs; load-order bugs (objects reading state before it's loaded).
 - **Done:** 100% reliable across 20 manual round-trips; tests green.
 - **Progress:**
-  - 🔧 **P3.1 — Persistence Spike (pulled forward):** done early, before P1's remaining items and P2, to test the core identity ("I changed something, and the world remembers") as soon as possible. One remembered fact, `bootstrap.crate_on_pad`: pushing `Crate_Medium` onto the corner pad records it, `WorldState` saves it as JSON immediately, and on the next start the crate is placed on the pad (authored "after" state). No `PersistentId`, second scene, or save system yet — those remain P3 proper (D-017). Implemented, awaiting Unity play-test.
+  - ✅ **P3.1 — Persistence Spike (pulled forward)** (2026-10-04): done early, before P1's remaining items and P2, to test the core identity ("I changed something, and the world remembers") as soon as possible. One remembered fact, `bootstrap.crate_on_pad`: pushing `Crate_Medium` onto the corner pad records it, `WorldState` saves it as JSON immediately, and on the next start the crate is placed on the pad (authored "after" state). No `PersistentId`, second scene, or save system yet — those remain P3 proper (D-017). Play-tested in Unity 6000.3.25f1: the fact was recorded and saved; the crate returned to the pad after stop/Play, after being pushed off, and after a full Unity restart; Delete Saved World State reset it to its original authored position; all EditMode tests passed.
 
 ### P4 — Consequences (~2 weeks) — the identity test
 - **Question:** *Does "the world remembers" actually feel good?*
