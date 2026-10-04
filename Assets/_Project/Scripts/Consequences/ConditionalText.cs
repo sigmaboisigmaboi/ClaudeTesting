@@ -80,7 +80,13 @@ namespace TheDeep.Consequences
             Refresh(); // the state may have changed while this was hidden (e.g. by a StateGate)
         }
 
-        void OnDisable() => WorldSession.Changed -= Refresh;
+        void OnDisable()
+        {
+            WorldSession.Changed -= Refresh;
+            // Disabling the component (e.g. an NPC that fell) hides its text too.
+            if (textRenderer != null)
+                textRenderer.enabled = false;
+        }
 
         void Start()
         {

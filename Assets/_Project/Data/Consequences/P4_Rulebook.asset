@@ -44,3 +44,14 @@ MonoBehaviour:
     reputationChanges:
     - faction: 2
       amount: -40
+  - id: bypass_opens
+    description: "With the Span closed, the Delvers tear down the Concord's barricade on the old west gantry: the Old Shaft bypass opens for haulers and the player. A separate rule (not part of span_collapse) so saves where the bridge already fell get it too."
+    condition:
+      requiredFacts:
+      - outpost.span_closed
+      forbiddenFacts: []
+      requiredDestroyedIds: []
+      reputation: []
+    factsToSet:
+    - p2span.bypass_open
+    reputationChanges: []

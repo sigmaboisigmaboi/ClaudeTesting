@@ -42,14 +42,23 @@ namespace TheDeep.World
 
         void OnTriggerEnter(Collider other)
         {
-            if (transitionInProgress || !other.CompareTag("Player"))
-                return;
+            if (other.CompareTag("Player"))
+                TravelTo(targetScene, targetSpawnId);
+        }
+
+        // Saves the world and moves the player to another area's spawn point. Used by exits and by
+        // NPCs that throw the player out. Returns false if a transition is already under way.
+        public static bool TravelTo(string scene, string spawnId)
+        {
+            if (transitionInProgress || string.IsNullOrEmpty(scene))
+                return false;
 
             transitionInProgress = true;
             WorldSession.Save();
-            PendingSpawnId = targetSpawnId;
-            Debug.Log($"Leaving to {targetScene} (spawn '{targetSpawnId}'). World state saved.");
-            SceneManager.LoadScene(targetScene);
+            PendingSpawnId = spawnId;
+            Debug.Log($"Leaving to {scene} (spawn '{spawnId}'). World state saved.");
+            SceneManager.LoadScene(scene);
+            return true;
         }
     }
 }

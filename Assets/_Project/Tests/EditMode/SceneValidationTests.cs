@@ -4,17 +4,20 @@ using System.Linq;
 using NUnit.Framework;
 using TheDeep.Consequences;
 using TheDeep.Destruction;
+using TheDeep.NPC;
 using TheDeep.State;
 using TheDeep.World;
+using Unity.AI.Navigation;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.SceneManagement;
 
 namespace TheDeep.Tests.EditMode
 {
     // Guards hand-authored scene content: opens every scene in the build list and checks
-    // persistent ids, destructible setup, area exits/spawn points, and consequence runners.
+    // persistent ids, destructible setup, area exits/spawn points, consequence runners, and NPCs.
     public class SceneValidationTests
     {
         // One thing read from a scene: which scene, which object, and the value we care about.
@@ -111,6 +114,53 @@ namespace TheDeep.Tests.EditMode
                 .Where(f => f.Value.Length > 0).ToList();
 
             Assert.IsEmpty(missing, string.Join("\n", missing.Select(m => $"{m.Scene}/{m.Object} has no rulebook assigned")));
+        }
+
+        [Test]
+        public void NpcAgents_HaveANavMeshAgent_KinematicBody_AndStops()
+        {
+            List<Found> problems = Collect<NpcAgent>(npc =>
+            {
+                var missing = new List<string>();
+                if (npc.GetComponent<NavMeshAgent>() == null) missing.Add("NavMeshAgent");
+                if (npc.GetComponent<Collider>() == null) missing.Add("collider");
+                Rigidbody body = npc.GetComponent<Rigidbody>();
+                if (body == null) missing.Add("Rigidbody");
+                else if (!body.isKinematic) missing.Add("kinematic Rigidbody");
+                if (npc.Stops.Any(stop => stop == null)) missing.Add("an empty stop slot");
+                return new Found { Value = string.Join(", ", missing) };
+            }).Where(f => f.Value.Length > 0).ToList();
+
+            Assert.IsEmpty(problems, string.Join("\n", problems.Select(p => $"{p.Scene}/{p.Object} is missing: {p.Value}")));
+        }
+
+        [Test]
+        public void NpcEjects_PointAtBuildScenes_WithAMatchingSpawnPoint()
+        {
+            List<Found> ejects = Collect<NpcAgent>(npc => new Found { Value = npc.EjectScene, Extra = npc.EjectSpawnId })
+                .Where(f => !string.IsNullOrEmpty(f.Value)).ToList();
+            List<Found> spawns = Collect<AreaSpawnPoint>(s => new Found { Value = s.SpawnId });
+
+            foreach (Found eject in ejects)
+            {
+                bool spawnExists = spawns.Any(s => s.Scene == eject.Value && s.Value == eject.Extra);
+                Assert.IsTrue(spawnExists, $"{eject.Scene}/{eject.Object} ejects to {eject.Value}/'{eject.Extra}', which doesn't exist in the build scenes.");
+            }
+        }
+
+        // Fails until the NavMesh has been baked in the Unity Editor (select NavMesh > Bake).
+        [Test]
+        public void ScenesWithNpcs_HaveABakedNavMesh()
+        {
+            List<string> scenesWithNpcs = Collect<NpcAgent>(npc => new Found()).Select(f => f.Scene).Distinct().ToList();
+            List<Found> surfaces = Collect<NavMeshSurface>(surface => new Found { Value = surface.navMeshData != null ? "baked" : "" });
+
+            foreach (string scene in scenesWithNpcs)
+            {
+                Assert.IsTrue(surfaces.Any(s => s.Scene == scene), $"{scene} has NPCs but no NavMeshSurface.");
+                Assert.IsTrue(surfaces.Any(s => s.Scene == scene && s.Value == "baked"),
+                    $"{scene}'s NavMesh hasn't been baked yet: open the scene, select the NavMesh object, and press Bake.");
+            }
         }
     }
 }

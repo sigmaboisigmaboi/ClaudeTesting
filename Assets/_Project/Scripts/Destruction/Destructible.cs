@@ -43,6 +43,10 @@ namespace TheDeep.Destruction
         [Tooltip("Pieces freeze in place after this many seconds (sooner if they come to rest).")]
         [SerializeField] float settleTime = 4f;
 
+        [Header("Reactions")]
+        [Tooltip("NPCs within this many meters flee when it breaks; anyone standing on it falls. 0 = none.")]
+        [SerializeField] float disturbanceRadius = 8f;
+
         static DebrisBudget<Destructible> debrisBudget = new DebrisBudget<Destructible>(MaxActiveDebrisPieces);
 
         float integrity;
@@ -121,6 +125,8 @@ namespace TheDeep.Destruction
                 return;
             isBroken = true;
 
+            // Its intact shape, read before the collider is switched off: whoever stands on it falls.
+            Bounds? footprint = intactCollider != null && intactCollider.enabled ? intactCollider.bounds : (Bounds?)null;
             SetLook(intactOn: false, fracturedOn: true, rubbleOn: false);
             LaunchPieces(impactPoint);
 
@@ -139,6 +145,9 @@ namespace TheDeep.Destruction
                     older.FreezePieces();
                 StartCoroutine(SettleThenFreeze());
             }
+
+            if (disturbanceRadius > 0f || footprint.HasValue)
+                Disturbances.Raise(new Disturbance(transform.position, disturbanceRadius, footprint));
 
             NotifyDependents();
         }
