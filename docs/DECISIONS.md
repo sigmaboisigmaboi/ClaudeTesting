@@ -281,10 +281,55 @@ Template:
 - **Consequences / tradeoffs:** Reactions are radius-based, not line-of-sight. A fallen NPC stays where it landed until the area reloads, then reappears at its start position, which is acceptable for generic NPCs.
 
 ## D-029 — Hostile NPCs eject the player; impacts stagger NPCs; no damage
-- **Status:** Locked (prototype-scoped)
+- **Status:** Locked (prototype-scoped). The "no health, damage, or death" part is superseded for combat NPCs by D-032 (P6); ejection and staggering are unchanged.
 - **Date:** 2026-10-04
 - **Decision:** An `NpcAgent` can have a "hostile when" `StateCondition` (Outpost guards: Concord reputation band Hostile). When it is met and the player comes within the notice radius, the NPC pursues. It keeps chasing until the player is beyond the lose radius, and catching them sends the player to a configured area spawn through `AreaExit.TravelTo`, the same transition exits use (the method was extracted from `AreaExit` without changing exit behavior). Physics impacts use the existing measure (D-019, mass × speed). A hit at or above the stagger threshold, from a non-kinematic object moving at 2 m/s or more and not being carried (`PlayerGrabThrow.CurrentlyHeld`), staggers the NPC: it stops and is shoved back along the NavMesh. There is no health, damage, or death.
 - **Reason:** Ejection makes "your choices become the enemy" literal without needing combat, and reuses tested area transitions. Staggering keeps the player's main verb (throwing) meaningful against NPCs. The speed filter stops NPCs from staggering when they walk into crates.
 - **Alternatives considered:** Guards dealing damage; guards only shoving the player; ignoring impacts on NPCs.
 - **Why rejected:** Damage needs a health system (Phase 2 combat); a shove on a CharacterController needs new player code and is easy to escape without consequence; ignoring impacts makes NPCs feel like walls.
 - **Consequences / tradeoffs:** Being caught always means leaving the area. NPCs can't be knocked off ledges (the shove stays on the NavMesh). Phase 2 combat should build health and damage on this stagger and impact measure.
+
+<!-- D-030 (Phase 1 gate review) is reserved: it was recorded on the claude/p5-reactive-npcs branch and is not on this branch yet. -->
+
+## D-031 — Player health, melee, knockback, and death/retry; the chasm is lethal (P6)
+- **Status:** Locked (prototype-scoped)
+- **Date:** 2026-10-06
+- **Decision:**
+  - **Health:** the player has 100 HP in a plain-C# `Health` (`PlayerHealth` wraps it). Taking damage flashes the screen red and shows an HP readout.
+  - **Death and retry:** at 0 HP, or on entering a `FallDeathZone`, the player dies at once. Controls stop and anything held is dropped. "YOU DIED" is shown, and a click reloads the current area through `AreaExit.TravelTo`. The player gets full health, the Scrapper is back at its post, and the **world is not rolled back** (what was destroyed stays destroyed). Player HP and position are not saved.
+  - **The chasm:** the Span's chasm is lethal to the player. An invisible trigger from y = −1.5 down to the chasm floor, across its full width, **includes the ramp**, with a "DANGER — CHASM" label at the ramp's top. There is **no fall-damage system**: entering the zone is the death. Scrappers are unaffected by the zone.
+  - **Melee:** a left click while empty-handed. It runs before `PlayerGrabThrow`, so **a click while holding still throws**. A 2.2 m sphere-cast from the camera does the following:
+    - an NPC takes 15 damage if it has health, and is hit with strength 10 for staggering and shoving
+    - a loose physics object gets a 20 N·s impulse, so crates can be batted
+    - **Destructibles take nothing.** Melee never damages structures, and bridge and destruction mechanics and thresholds are unchanged.
+  - **Knockback:** a Scrapper's landed strike pushes the player a fixed **2.5 m horizontally over 0.25 s**. It is added through the existing `FirstPersonController`'s single `Move` call, so walls stop it and it can carry the player over a ledge.
+  - **Display:** prototype only, using Unity's built-in `OnGUI` (HP, flash, death screen, an aiming dot), with no Canvas or UI package.
+- **Reason:** It's the smallest complete fail state and feedback loop for testing whether environmental combat is fun. Lethal chasm plus knockback make positioning matter. Reloading the area reuses tested code, and not rolling back the world keeps "choices persist."
+- **Alternatives considered:** A fall-damage system; rolling back the world on death; a separate physics-based player controller for knockback; a Canvas/TextMeshPro HUD; melee that breaks structures.
+- **Why rejected:** Fall damage isn't needed when the only dangerous drop is the chasm; rollback contradicts immediate saves and "choices persist"; a new controller rewrites working P1 code; a UI framework is out of scope; melee breaking posts would change P2/P4's bridge balance.
+- **Consequences / tradeoffs:**
+  - Walking down the old P2 escape ramp now kills you.
+  - HP resets on any area change, since there's no carried player state.
+  - `OnGUI` is crude and will be replaced by real UI later.
+
+## D-032 — Scrapper: a combat extension of NpcBrain/NpcAgent (P6)
+- **Status:** Locked (prototype-scoped)
+- **Date:** 2026-10-06
+- **Decision:**
+  - **Brain states:** `NpcBrain` gains **Alert** (brief stop after noticing), **Attack** (wind-up, one strike, recovery, cooldown) and **Dead** (permanent). The new settings default to off, so every P5 NPC behaves exactly as before; the original tests are unchanged and still pass.
+  - **Combat section:** `NpcAgent` gains an optional combat section, used only when Max Health is above 0, plus `alwaysHostile`.
+  - **The one Scrapper** (P2_Span far ledge):
+    - 60 HP, notices within 9 m, 0.5 s alert, attack range 1.8 m
+    - 0.6 s wind-up with a visible lean, then a strike that lands only if the player is within 2.2 m and a 60° cone in front; 20 damage
+    - doesn't flee from disturbances
+  - **Impacts:** they use the existing measure (D-019, mass × speed). Damage = (strength − 8) × 1.5, capped at 45. It comes only from **thrown or pushed** objects that are non-kinematic, moving at 2 m/s or more, and not carried. **Held crates never deal damage.** Strength 12 or more staggers the Scrapper and **cancels its wind-up**. The player's melee (strength 10) damages and shoves it but doesn't stagger it.
+  - **Knock-off:** when a hit's shove would carry the Scrapper over a real drop (nothing solid in the way, and no ground within 1.5 m below), it is knocked off and becomes a physics body.
+  - **Death:** a Scrapper that drops **more than 1.5 m dies**. This also covers the bridge collapsing under it. A Scrapper killed on its feet is laid down without physics, so its body can't break structures.
+  - **Not saved:** the Scrapper's health and position. It respawns when the area reloads (DESIGN §6: generic enemies).
+- **Reason:** It extends the tested P5 architecture instead of building a parallel enemy system, keeps decisions testable in plain C#, and makes the environment (crates, ledges, the bridge) stronger than clicking.
+- **Alternatives considered:** A separate Scrapper class or prefab; health and damage on every NPC; melee that staggers; a ragdoll death.
+- **Why rejected:** A second NPC architecture duplicates P5; P5 NPCs don't need health in this slice; melee staggers would let clicking stun-lock the Scrapper; ragdolls need character rigs.
+- **Consequences / tradeoffs:**
+  - `NpcAgent` is larger (one component with an optional section) and may be split in Phase 2.
+  - A Scrapper knocked off right next to a bridge post is a 70 kg falling body, and like any thrown object it could damage that post on the way down. Destructible rules are unchanged.
+  - There's no line-of-sight check on strikes.

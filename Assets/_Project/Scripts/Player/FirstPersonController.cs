@@ -30,6 +30,8 @@ namespace TheDeep.Player
         InputAction lookAction;
         float verticalVelocity;
         float pitch;
+        Vector3 knockbackVelocity;
+        float knockbackTimeLeft;
 
         void Awake()
         {
@@ -56,6 +58,18 @@ namespace TheDeep.Player
             Move();
         }
 
+        // Pushes the player sideways by 'displacement' (horizontal) spread over 'duration' seconds,
+        // e.g. when a Scrapper hits them. It goes through the normal Move, so walls stop it,
+        // and it can carry the player over a ledge.
+        public void AddKnockback(Vector3 displacement, float duration)
+        {
+            displacement.y = 0f;
+            if (duration <= 0f || displacement.sqrMagnitude < 0.0001f)
+                return;
+            knockbackVelocity = displacement / duration;
+            knockbackTimeLeft = duration;
+        }
+
         void Look()
         {
             // Mouse delta is already "movement this frame", so no Time.deltaTime here.
@@ -80,6 +94,15 @@ namespace TheDeep.Player
 
             // One Move call per frame keeps collision and isGrounded consistent.
             Vector3 velocity = move * moveSpeed + Vector3.up * verticalVelocity;
+
+            // Knockback: exactly 'displacement' in total (the last frame only uses the time left).
+            if (knockbackTimeLeft > 0f && Time.deltaTime > 0f)
+            {
+                float step = Mathf.Min(Time.deltaTime, knockbackTimeLeft);
+                velocity += knockbackVelocity * (step / Time.deltaTime);
+                knockbackTimeLeft -= step;
+            }
+
             controller.Move(velocity * Time.deltaTime);
         }
     }

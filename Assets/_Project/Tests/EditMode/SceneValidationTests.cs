@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
+using TheDeep.Combat;
 using TheDeep.Consequences;
 using TheDeep.Destruction;
 using TheDeep.NPC;
+using TheDeep.Player;
 using TheDeep.State;
 using TheDeep.World;
 using Unity.AI.Navigation;
@@ -17,7 +19,7 @@ using UnityEngine.SceneManagement;
 namespace TheDeep.Tests.EditMode
 {
     // Guards hand-authored scene content: opens every scene in the build list and checks
-    // persistent ids, destructible setup, area exits/spawn points, consequence runners, and NPCs.
+    // persistent ids, destructible setup, area exits/spawn points, consequence runners, NPCs, and combat.
     public class SceneValidationTests
     {
         // One thing read from a scene: which scene, which object, and the value we care about.
@@ -161,6 +163,34 @@ namespace TheDeep.Tests.EditMode
                 Assert.IsTrue(surfaces.Any(s => s.Scene == scene && s.Value == "baked"),
                     $"{scene}'s NavMesh hasn't been baked yet: open the scene, select the NavMesh object, and press Bake.");
             }
+        }
+
+        [Test]
+        public void CombatNpcs_CanAttack_AndTheirSceneHasAPlayerWithHealthAndMelee()
+        {
+            List<Found> combatants = Collect<NpcAgent>(npc => new Found { Value = npc.IsCombatant ? "yes" : "", Extra = npc.AttackRange > 0f ? "" : "no attack range" })
+                .Where(f => f.Value == "yes").ToList();
+            List<Found> healths = Collect<PlayerHealth>(p => new Found());
+            List<Found> melees = Collect<PlayerMelee>(p => new Found());
+
+            foreach (Found npc in combatants)
+            {
+                Assert.IsTrue(npc.Extra.Length == 0, $"{npc.Scene}/{npc.Object} has health but {npc.Extra}.");
+                Assert.IsTrue(healths.Any(h => h.Scene == npc.Scene), $"{npc.Scene} has a combat NPC but its Player has no PlayerHealth.");
+                Assert.IsTrue(melees.Any(m => m.Scene == npc.Scene), $"{npc.Scene} has a combat NPC but its Player has no PlayerMelee.");
+            }
+        }
+
+        [Test]
+        public void FallDeathZones_HaveATriggerCollider()
+        {
+            List<Found> problems = Collect<FallDeathZone>(zone =>
+            {
+                Collider collider = zone.GetComponent<Collider>();
+                return new Found { Value = collider == null ? "no collider" : (collider.isTrigger ? "" : "a collider that isn't a trigger") };
+            }).Where(f => f.Value.Length > 0).ToList();
+
+            Assert.IsEmpty(problems, string.Join("\n", problems.Select(p => $"{p.Scene}/{p.Object} has {p.Value}")));
         }
     }
 }
